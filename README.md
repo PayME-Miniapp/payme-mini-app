@@ -131,7 +131,6 @@ Bộ key bao gồm: appId, publicKey, privateKey. Liên hệ PayME để đượ
 Chú thích:
 - appId: mỗi đối tác tích hợp PayME Miniapp sẽ được cấp 1 appId riêng biệt
 - publicKey, privateKey: cặp key được gen khi đăng ký đối tác với PayME
-- env: môi trường miniapp mà đối tác muốn sử dụng
 
 ```javascript
 import { init } from 'payme-mini-app'
