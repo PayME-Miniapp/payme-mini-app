@@ -5,7 +5,7 @@
 - [Cài thư viện](#cài-thư-viện)
 - [IOS](#ios)
 
-[Sử dụng](#sử-dụng)
+[Cách Sử dụng](#cách-sử-dụng)
 <!-- - [Khởi tạo PayMEMiniApp](#khoi-tao-paymeminiapp) -->
 
 # Cài đặt
