@@ -213,7 +213,7 @@ Chi tiết các kiểu dữ liệu
 ```javascript
 import { open } from 'payme-mini-app'
 
-function open(
+open(
   openType: OpenMiniAppType = OpenMiniAppType.screen,
   openMiniAppData: OpenMiniAppDataInterface
 )
@@ -221,7 +221,7 @@ function open(
 
 | **Tham số**         | **Bắt buộc** | **Kiểu dữ liệu**         | **Giải thích**                                                       |
 | ------------------- | ------------ | ------------------------ | -------------------------------------------------------------------- |
-| **openType**        | Có           | enum "screen", "modal"   | Mở Miniapp theo giao diện toàn màn hình hoặc modal trươt từ dưới lên |
+| **openType**        | Có           | enum "screen", "modal"   | Mở Miniapp theo giao diện toàn màn hình hoặc modal truợt từ dưới lên |
 | **openMiniAppData** | Có           | OpenMiniAppDataInterface | Thông tin thêm tùy vào loại action                                   |
 
 Chi tiết các OpenMiniAppData:
