@@ -26,14 +26,6 @@ yarn add payme-mini-app
 
 ## IOS
 
-PayMEMiniApp là một dynamic framework được cung cấp thông qua CocoaPods. Để cài đặt vào project, thêm khai báo sử dụng framework vào Podfile
-
-```swift
-use_framework!
-
-pod PayMEMiniApp
-```
-
 Thêm vào cuối Podfile:
 
 ```swift
@@ -128,7 +120,7 @@ Bộ key bao gồm: appId, publicKey, privateKey. Liên hệ PayME để đượ
 
 ### Khởi tạo Miniapp
 
-*Việc khởi tạo này cũng sẽ bắt đầu việc kiểm tra và download phiên bản của PayMEMiniApp, do đó khuyến khích khởi tạo càng sớm càng tốt khi chạy app.*
+<strong>*Việc khởi tạo này cũng sẽ bắt đầu việc kiểm tra và download phiên bản của PayMEMiniApp, do đó khuyến khích khởi tạo càng sớm càng tốt khi chạy app.*<strong>
 
 | **Tham số**    | **Bắt buộc** | **Kiểu dữ liệu**                     |
 | -------------- | ------------ | ------------------------------------ |
@@ -176,8 +168,10 @@ init(
 Sử dụng hàm này để thiết lập việc hứng các events onResponse hoặc onError được bắn ra trong quá trình thao tác với Miniapp
 
 ```javascript
- PayMEMiniAppEvents.addListener('onResponse', listener)
- PayMEMiniAppEvents.addListener('onError', listener)
+import { PayMEMiniAppEvents } from 'payme-mini-app'
+
+PayMEMiniAppEvents.addListener('onResponse', listener)
+PayMEMiniAppEvents.addListener('onError', listener)
 ```
 
 | **Tham số**    | **Bắt buộc** | **Kiểu dữ liệu**                         |
@@ -218,9 +212,11 @@ Chi tiết các kiểu dữ liệu
 Đối tác dùng hàm này để mở giao diện PayME Miniapp sau khi đã khởi tạo
 
 ```javascript
- function open(
-    openType: OpenMiniAppType = OpenMiniAppType.screen,
-    openMiniAppData: OpenMiniAppDataInterface,
+import { open } from 'payme-mini-app'
+
+function open(
+  openType: OpenMiniAppType = OpenMiniAppType.screen,
+  openMiniAppData: OpenMiniAppDataInterface
 )
 ```
 
@@ -382,7 +378,9 @@ open('screen', {
 Đối tác dùng hàm này để lấy thông tin số dư ví PayME của tài khoản, kết quả sẽ được trả về ở event onResponse, action GET_BALANCE
 
 ```javascript
-function getBalance(phone: string)
+import { getBalance } from 'payme-mini-app'
+
+getBalance(phone: string)
 ```
 
 | **Tham số** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**                                                      |
@@ -394,7 +392,9 @@ function getBalance(phone: string)
 Đối tác dùng hàm này để lấy thông tin tài khoản PayME, kết quả sẽ được trả về ở event onResponse, action GET_ACCOUNT_INFO
 
 ```javascript
-function getAccountInfo(phone: String)
+import { getAccountInfo } from 'payme-mini-app'
+
+getAccountInfo(phone: String)
 ```
 
 | **Tham số** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**                                                      |
