@@ -1,11 +1,11 @@
 # payme-mini-app
 
-[Cài đặt](#cai-dat)
+[Cài đặt](#cài-đặt)
 
-- [Cài thư viện](#cai-thu-vien)
+- [Cài thư viện](#cài-thư-viện)
 - [IOS](#ios)
 
-[Sử dụng](#su-dung)
+[Sử dụng](#sử-dụng)
 <!-- - [Khởi tạo PayMEMiniApp](#khoi-tao-paymeminiapp) -->
 
 # Cài đặt
