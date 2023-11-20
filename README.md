@@ -3,7 +3,8 @@
 [Cài đặt](#cài-đặt)
 
 - [Cài thư viện](#cài-thư-viện)
-- [IOS](#ios)
+- [Android](#android)
+- [iOS](#ios)
 
 [Cách sử dụng](#cách-sử-dụng)
 <!-- - [Khởi tạo PayMEMiniApp](#khoi-tao-paymeminiapp) -->
@@ -24,7 +25,22 @@ yarn:
 yarn add payme-mini-app
 ```
 
-## IOS
+## Android
+**Thêm maven jitpack.io**
+
+Update file build.gradle project
+```kotlin
+allprojects {
+  repositories {
+    ...
+    maven { 
+        url "https://jitpack.io"
+    }
+ }
+}
+```
+
+## iOS
 
 Thêm vào cuối Podfile:
 
