@@ -146,15 +146,19 @@ Bộ key bao gồm: appId, publicKey, privateKey. Liên hệ PayME để đượ
 | **appId**      | Có           | String                               |
 | **publicKey**  | Có           | String                               |
 | **privateKey** | Có           | String                               |
+| **env**        | Không        | String                               |
+| **mode**       | Không        | String                               |
 
 Chú thích:
 - appId: mỗi đối tác tích hợp PayME Miniapp sẽ được cấp 1 appId riêng biệt
 - publicKey, privateKey: cặp key được gen khi đăng ký đối tác với PayME
+- env: Môi trường khởi tạo PayMEMiniApp (PRODUCTION, SANDBOX)
+- mode: Chế độ sử dụng PayMEMiniApp (miniapp_sandbox, miniapp_product) 
 
 ```javascript
 import { init } from 'payme-mini-app'
 
-init(appId, publicKey, privateKey)
+init(appId, publicKey, privateKey, env, mode)
 ```
 
 Ví dụ:
@@ -177,7 +181,9 @@ init(
     2f2A/f69VEwuTwIgFN/3jAdm0dsDdJBZHWYCtnEmpHAQCW2dkpWekNsKvwMCIGXm
     rg+mppNNZQx6+6Swsp8L8Hgc+HikKy02Okijjw0W
     -----END RSA PRIVATE KEY-----
-    """
+    """,
+    env: "SANDBOX",
+    mode: "miniapp_sandbox"
 )
 ```
 

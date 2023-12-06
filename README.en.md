@@ -148,15 +148,19 @@ The key set includes: appId, publicKey, privateKey. Contact PayME for guidance.
 | **appId**      | Yes           | String                               |
 | **publicKey**  | Yes           | String                               |
 | **privateKey** | Yes           | String                               |
+| **env**        | No        | String                               |
+| **mode**       | No        | String                               |
 
 Note:
 - appId: Each partner integrating PayME Miniapp will be provided with a unique appId.
 - publicKey, privateKey: a key pair generated when registering as a partner with PayME.
+- env: Initialization environment for PayMEMiniApp (PRODUCTION, SANDBOX).
+- mode: PayMEMiniApp usage mode (miniapp_sandbox, miniapp_product).
 
 ```javascript
 import { init } from 'payme-mini-app'
 
-init(appId, publicKey, privateKey)
+init(appId, publicKey, privateKey, env, mode)
 ```
 
 Example:
@@ -179,7 +183,9 @@ init(
     2f2A/f69VEwuTwIgFN/3jAdm0dsDdJBZHWYCtnEmpHAQCW2dkpWekNsKvwMCIGXm
     rg+mppNNZQx6+6Swsp8L8Hgc+HikKy02Okijjw0W
     -----END RSA PRIVATE KEY-----
-    """
+    """,
+    env: "SANDBOX",
+    mode: "miniapp_sandbox"
 )
 ```
 
