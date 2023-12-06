@@ -1,3 +1,6 @@
+[![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/PayME-Miniapp/payme-mini-app/blob/main/README.en.md)
+[![vi](https://img.shields.io/badge/lang-vi-green.svg)](https://github.com/PayME-Miniapp/payme-mini-app/blob/main/README.md)
+
 # payme-mini-app
 
 [Cài đặt](#cài-đặt)
@@ -205,7 +208,7 @@ Chi tiết các kiểu dữ liệu
 | **Giá trị** | **Giải thích** |
 |-----------------|-----------------------------------------------------------------------------------------------------------|
 | **PAYME** | Dùng riêng cho app ví PayME |  
-| **OPEN** | Nếu chưa kích hoạt tài khoản ví PayME thì kích hoạt, nếu đã kích hoạt thì mở giao diện trang chủ ví PayME |
+| **OPEN** | Nếu chưa kích hoạt tài khoản ví PayME thì mở giao diện kích hoạt, nếu đã kích hoạt thì mở giao diện trang chủ ví PayME |
 | **PAY** | Mở giao diện thanh toán đơn hàng |
 | **GET_BALANCE** | Lấy số dư ví PayME |
 | **SERVICE** | Mở giao diện thanh toán dịch vụ |
@@ -353,11 +356,11 @@ open('screen', {
 })
 ```
 
-**SERVICE:** đối tác dùng action này khi muốn mở giao diện kyc
+**SERVICE:** đối tác dùng action này khi muốn mở giao diện thanh toán dịch vụ
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
 |---------------------|--------------|--------------------------------------|----------------------------------|
 | **phone** | Có | String | Số điện thoại của tài khoản |
-| **additionalData** | Có | ServiceData | Thông tin thêm để phục vụ việc |
+| **additionalData** | Có | ServiceData | Thông tin thêm để phục vụ thanh toán dịch vụ |
 
 Chi tiết ServiceData:
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
