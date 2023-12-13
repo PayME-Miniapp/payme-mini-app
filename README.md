@@ -116,6 +116,14 @@ Tìm và chọn "Background Modes", bật lựa chọn "Background Fetch"
 
 Thêm dòng sau vào AppDelegate:
 
+Objective-C:
+
+```objective-c
+- (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)(void))completionHandler { completionHandler(); }
+```
+
+Swift:
+
 ```swift
 import UIKit
 import PayMEMiniApp

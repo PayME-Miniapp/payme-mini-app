@@ -118,6 +118,14 @@ Find and select "Background Modes", turn on the option "Background Fetch"
 
 Add the following line to AppDelegate:
 
+Objective-C:
+
+```objective-c
+- (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)(void))completionHandler { completionHandler(); }
+```
+
+Swift:
+
 ```swift
 import UIKit
 import PayMEMiniApp
