@@ -61,16 +61,12 @@ post_install do |installer|
     end
   end
 end
-```
 
-If your project does not use frameworks, you need to change the build config to declare the framework as follows:
-
-```swift
 $dynamic_framework = ['PayMEMiniApp', 'CryptoSwift', 'SwiftyRSA', 'GCDWebServer', 'NSLogger', 'lottie-ios', 'SwiftyJSON', 'ZIPFoundation', 'Mixpanel-swift']
- pre_install do |installer|
-   installer.pod_targets.each do |pod|
-     if $dynamic_framework.include?(pod.name)
-       def pod.build_type;
+pre_install do |installer|
+  installer.pod_targets.each do |pod|
+    if $dynamic_framework.include?(pod.name)
+      def pod.build_type;
        Pod::BuildType.dynamic_framework
       end
     end
