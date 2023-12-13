@@ -45,6 +45,11 @@ allprojects {
 
 ## iOS
 
+Add this line to Podfile:
+```swift
+use_frameworks! :linkage => :static
+```
+
 Add at the end of the Podfile:
 
 ```swift
