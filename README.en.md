@@ -119,13 +119,13 @@ Find and select "Background Modes", turn on the option "Background Fetch"
 
 Add the following line to AppDelegate:
 
-Objective-C:
+- Objective-C:
 
 ```objective-c
 - (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)(void))completionHandler { completionHandler(); }
 ```
 
-Swift:
+- Swift:
 
 ```swift
 import UIKit
