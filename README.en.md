@@ -304,6 +304,28 @@ open('screen', {
 })
 ```
 
+**PAYMENT:** Partners use this action when they want to open the payment interface of the Miniapp (partners select the method within their application).
+
+| **Attribute** | **Required** | **Data Type** | **Explanation** |
+|---------------------|--------------|------------------|--------------------------------------------|
+| **data** | Yes | PaymentDirectData | Additional information to facilitate payment
+ |
+
+Chi tiết PaymentDirectData:
+| **Attribute** | **Required** | **Data Type** | **Explanation** |
+|---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
+| **transaction** | Yes | String | Transaction code |  
+
+Example:
+```javascript
+open('screen', {
+  action: 'PAYMENT',
+  data: {
+    transactionId: "123456"
+  }
+})
+```
+
 **DEPOSIT:** Partners use this action when they want to open the interface to deposit money into the PayME wallet
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|--------------------------------------|----------------------------------|

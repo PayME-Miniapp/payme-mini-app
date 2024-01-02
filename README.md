@@ -302,6 +302,26 @@ open('screen', {
 })
 ```
 
+**PAYMENT:** đối tác dùng action này khi muốn mở giao diện thanh toán của Miniapp (đối tác chọn phương thức bên ứng dụng của đối tác)
+| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
+|---------------------|--------------|------------------|--------------------------------------------|
+| **data** | Có | PaymentDirectData | Thông tin thêm để phục vụ việc thanh toán |
+
+Chi tiết PaymentDirectData:
+| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
+|---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
+| **transaction** | Có | String | Mã giao dịch |  
+
+Ví dụ:
+```javascript
+open('screen', {
+  action: 'PAYMENT',
+  data: {
+    transactionId: "123456"
+  }
+})
+```
+
 **DEPOSIT:** đối tác dùng action này khi muốn mở giao diện nạp tiền vào ví PayME
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
 |---------------------|--------------|--------------------------------------|----------------------------------|
