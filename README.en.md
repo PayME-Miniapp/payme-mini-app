@@ -321,7 +321,7 @@ Example:
 open('screen', {
   action: 'PAYMENT',
   data: {
-    transactionId: "123456"
+    transaction: "123456"
   }
 })
 ```
