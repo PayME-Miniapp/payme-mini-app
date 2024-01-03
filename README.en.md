@@ -304,14 +304,18 @@ open('screen', {
 })
 ```
 
-**PAYMENT:** Partners use this action when they want to open the payment interface of the Miniapp (partners select the method within their application).
+**PAYMENT:** Partners use this action when they want to open the payment interface of the Miniapp
+
+- The steps of retrieving a list of methods and generating transaction code will be carried out in the partner's application. (For details, please contact PayME)
+
+  * Utilize API connection to fetch the list of methods.
+  * Then select a method, call the transaction creation API to retrieve the transaction.
 
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|------------------|--------------------------------------------|
 | **data** | Yes | PaymentDirectData | Additional information to facilitate payment
- |
 
-Chi tiết PaymentDirectData:
+Details of PaymentDirectData:
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
 | **transaction** | Yes | String | Transaction code |  
