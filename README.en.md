@@ -162,7 +162,7 @@ The key set includes: appId, publicKey, privateKey. Contact PayME for guidance.
 | **mode**       | No        | String                               |
 
 Note:
-- appId: Each partner integrating PayME Miniapp will be provided with a unique appId.
+- appId: Each partner integrating PayME Miniapp will be provided with a unique appId. (Note: The value of the appId is taken from the x-api-client field on the dashboard)
 - publicKey, privateKey: a key pair generated when registering as a partner with PayME.
 - env: Initialization environment for PayMEMiniApp (PRODUCTION, SANDBOX).
 - mode: PayMEMiniApp usage mode (miniapp_sandbox, miniapp_product).
