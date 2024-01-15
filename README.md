@@ -287,6 +287,7 @@ Chi tiết PaymentData:
 | **amount** | Có | Int | Tổng số tiền giao dịch |  
 | **note** | Không | String | Ghi chú của giao dịch |
 | **ipnUrl** | Không | String | Đường dẫn để server PayME ipn đến khi giao dịch có tiến triển (thành công/thất bại) |
+| **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Ví dụ:
 ```javascript
@@ -314,7 +315,8 @@ open('screen', {
 Chi tiết PaymentDirectData:
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
 |---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
-| **transaction** | Có | String | Mã giao dịch |  
+| **transaction** | Có | String | Mã giao dịch |
+| **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Ví dụ:
 ```javascript
@@ -382,6 +384,7 @@ Chi tiết DepositWithdrawTransferData:
 |---------------------|--------------|------------------|-------------------------------------------------------|
 | **description** | Không | String | Miêu tả giao dịch |  
 | **amount** | Không | Int | Tổng số tiền giao dịch |
+| **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 **KYC:** đối tác dùng action này khi muốn mở giao diện kyc
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
@@ -406,6 +409,7 @@ Chi tiết ServiceData:
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
 |---------------------|--------------|------------------|-------------------------------------------------------|
 | **code** | Không | String | Mã dịch vụ |
+| **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Danh sách mã dịch vụ:
 

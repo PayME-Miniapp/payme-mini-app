@@ -289,6 +289,7 @@ Details of PaymentData:
 | **amount** | Yes | Int | Total transaction amount |  
 | **note** | No | String | Transaction note |
 | **ipnUrl** | No | String | Path for PayME server ipn to check when the transaction progresses (success/failure) |
+| **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 Example:
 ```javascript
@@ -318,7 +319,8 @@ open('screen', {
 Details of PaymentDirectData:
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
-| **transaction** | Yes | String | Transaction code |  
+| **transaction** | Yes | String | Transaction code |
+| **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 Example:
 ```javascript
@@ -386,6 +388,7 @@ Details of DepositWithdrawTransferData:
 |---------------------|--------------|------------------|-------------------------------------------------------|
 | **description** | No | String | Transaction description |  
 | **amount** | No | Int | Total transaction amount |
+| **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 **KYC:** Partners use this action when they want to open the KYC interface
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
@@ -410,6 +413,7 @@ Details of ServiceData:
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------|--------------|---------------|-----------------|
 | **code**      | No        | String        | Service code |
+| **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 List of service codes:
 
