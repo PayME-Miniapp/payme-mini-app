@@ -158,19 +158,21 @@ The key set includes: appId, publicKey, privateKey. Contact PayME for guidance.
 | **appId**      | Yes           | String                               |
 | **publicKey**  | Yes           | String                               |
 | **privateKey** | Yes           | String                               |
+| **locale**        | No        | String (from version 1.0.14 and above)                           |
 | **env**        | No        | String                               |
 | **mode**       | No        | String                               |
 
 Note:
 - appId: Each partner integrating PayME Miniapp will be provided with a unique appId. (Note: The value of the appId is taken from the x-api-client field on the dashboard)
 - publicKey, privateKey: a key pair generated when registering as a partner with PayME.
+- locale: Initialization language for PayMEMiniApp (vi, en).
 - env: Initialization environment for PayMEMiniApp (PRODUCTION, SANDBOX).
 - mode: PayMEMiniApp usage mode (miniapp_sandbox, miniapp_product).
 
 ```javascript
 import { init } from 'payme-mini-app'
 
-init(appId, publicKey, privateKey, env, mode)
+init(appId, publicKey, privateKey, locale, env, mode)
 ```
 
 Example:
@@ -194,6 +196,7 @@ init(
     rg+mppNNZQx6+6Swsp8L8Hgc+HikKy02Okijjw0W
     -----END RSA PRIVATE KEY-----
     """,
+    locale: "vi",
     env: "SANDBOX",
     mode: "miniapp_sandbox"
 )
@@ -466,3 +469,17 @@ getAccountInfo(phone: String)
 | **Attribute** | **Required** | **Data Type**   | **Explanation**                                                   |
 | ------------- | ------------ | --------------- | ----------------------------------------------------------------- |
 | **phone**     | Yes          | String          | The phone number of the account for which to retrieve the balance |
+
+### Function setLanguage (from version 1.0.14 and above)
+
+Partners use this function to switch language.
+
+```javascript
+import { setLanguage } from 'payme-mini-app'
+
+setLanguage(language: String)
+```
+
+| **Attribute** | **Required** | **Data Type**   | **Explanation**                                                   |
+| ------------- | ------------ | --------------- | ----------------------------------------------------------------- |
+| **language**     | Yes          | String          | The language to switch to (vi, en). |

@@ -156,19 +156,21 @@ Bộ key bao gồm: appId, publicKey, privateKey. Liên hệ PayME để đượ
 | **appId**      | Có           | String                               |
 | **publicKey**  | Có           | String                               |
 | **privateKey** | Có           | String                               |
+| **locale**        | Không        | String (từ phiên bản 1.0.14 trở về sau)                            |
 | **env**        | Không        | String                               |
 | **mode**       | Không        | String                               |
 
 Chú thích:
 - appId: mỗi đối tác tích hợp PayME Miniapp sẽ được cấp 1 appId riêng biệt (lưu ý: giá trị appId được lấy từ biến x-api-client trên dashboard)
 - publicKey, privateKey: cặp key được gen khi đăng ký đối tác với PayME
+- locale: Ngôn ngữ khởi tạo PayMEMiniApp (vi, en)
 - env: Môi trường khởi tạo PayMEMiniApp (PRODUCTION, SANDBOX)
 - mode: Chế độ sử dụng PayMEMiniApp (miniapp_sandbox, miniapp_product) 
 
 ```javascript
 import { init } from 'payme-mini-app'
 
-init(appId, publicKey, privateKey, env, mode)
+init(appId, publicKey, privateKey, locale, env, mode)
 ```
 
 Ví dụ:
@@ -192,6 +194,7 @@ init(
     rg+mppNNZQx6+6Swsp8L8Hgc+HikKy02Okijjw0W
     -----END RSA PRIVATE KEY-----
     """,
+    locale: "vi",
     env: "SANDBOX",
     mode: "miniapp_sandbox"
 )
@@ -462,3 +465,17 @@ getAccountInfo(phone: String)
 | **Tham số** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**                                                      |
 | ----------- | ------------ | ---------------- | ------------------------------------------------------------------- |
 | **phone**   | Có           | String           | Số điện thoại của tài khoản cần lấy số dư ví (không cần format +84) |
+
+### Hàm setLanguage (từ phiên bản 1.0.14 trở về sau)
+
+Đối tác dùng hàm này để lấy thay đổi ngôn ngữ
+
+```javascript
+import { setLanguage } from 'payme-mini-app'
+
+setLanguage(language: String)
+```
+
+| **Tham số** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**                                                      |
+| ----------- | ------------ | ---------------- | ------------------------------------------------------------------- |
+| **language**   | Có           | String           | Ngôn ngữ cần đổi (vi, en) |
