@@ -156,7 +156,7 @@ Bộ key bao gồm: appId, publicKey, privateKey. Liên hệ PayME để đượ
 | **appId**      | Có           | String                               |
 | **publicKey**  | Có           | String                               |
 | **privateKey** | Có           | String                               |
-| **locale**        | Không        | String (từ phiên bản 1.0.14 trở về sau)                            |
+| **locale**        | Không        | String (từ phiên bản 0.5.3 trở về sau)                            |
 | **env**        | Không        | String                               |
 | **mode**       | Không        | String                               |
 
@@ -466,7 +466,7 @@ getAccountInfo(phone: String)
 | ----------- | ------------ | ---------------- | ------------------------------------------------------------------- |
 | **phone**   | Có           | String           | Số điện thoại của tài khoản cần lấy số dư ví (không cần format +84) |
 
-### Hàm setLanguage (từ phiên bản 1.0.14 trở về sau)
+### Hàm setLanguage (từ phiên bản 0.5.3 trở về sau)
 
 Đối tác dùng hàm này để lấy thay đổi ngôn ngữ
 

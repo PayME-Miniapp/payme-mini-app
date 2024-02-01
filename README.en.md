@@ -158,7 +158,7 @@ The key set includes: appId, publicKey, privateKey. Contact PayME for guidance.
 | **appId**      | Yes           | String                               |
 | **publicKey**  | Yes           | String                               |
 | **privateKey** | Yes           | String                               |
-| **locale**        | No        | String (from version 1.0.14 and above)                           |
+| **locale**        | No        | String (from version 0.5.3 and above)                           |
 | **env**        | No        | String                               |
 | **mode**       | No        | String                               |
 
@@ -470,7 +470,7 @@ getAccountInfo(phone: String)
 | ------------- | ------------ | --------------- | ----------------------------------------------------------------- |
 | **phone**     | Yes          | String          | The phone number of the account for which to retrieve the balance |
 
-### Function setLanguage (from version 1.0.14 and above)
+### Function setLanguage (from version 0.5.3 and above)
 
 Partners use this function to switch language.
 
