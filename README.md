@@ -10,13 +10,14 @@
 - [iOS](#ios)
 
 [Cách sử dụng](#cách-sử-dụng)
+
 <!-- - [Khởi tạo PayMEMiniApp](#khoi-tao-paymeminiapp) -->
 
 # Cài đặt
 
 ## Cài thư viện
 
-npm: 
+npm:
 
 ```javascript
 npm install payme-mini-app
@@ -29,14 +30,16 @@ yarn add payme-mini-app
 ```
 
 ## Android
+
 **Thêm maven jitpack.io**
 
 Update file build.gradle project
+
 ```kotlin
 allprojects {
   repositories {
     ...
-    maven { 
+    maven {
         url "https://jitpack.io"
     }
  }
@@ -46,6 +49,7 @@ allprojects {
 ## iOS
 
 Thêm dòng này vào Podfile:
+
 ```swift
 use_frameworks! :linkage => :static
 ```
@@ -83,24 +87,27 @@ Cập nhật Info.plist những key như bên dưới để đảm bảo PayMEMi
 
 ```swift
 Privacy - Camera Usage Description
-Privacy - Face ID Usage Description
 Privacy - Photo Library Usage Description
 Privacy - Photo Library Additions Usage Description
 Privacy - Contacts Usage Description
-Privacy - Location When In Use Usage Description
-Privacy - Location Always Usage Description
 ```
 
-Raw Keys version:
+Key:
 
 ```swift
 NSCameraUsageDescription
-NSFaceIDUsageDescription
 NSPhotoLibraryUsageDescription
 NSPhotoLibraryAddUsageDescription
 NSContactsUsageDescription
-NSLocationWhenInUseUsageDescription
-NSLocationAlwaysUsageDescription
+```
+
+Giải thích:
+
+```text
+- NSCameraUsageDescription: Quyền để chụp ảnh khi sử dụng tính năng KYC
+- NSPhotoLibraryUsageDescription: Quyền sử dụng hình ảnh trong thư viện khi sử dụng tính năng tải QR Code
+- NSPhotoLibraryAddUsageDescription: Quyền thêm hình ảnh vào trong thư viện khi sử dụng tính năng tải QR Code
+- NSContactsUsageDescription: Quyền truy cập danh bạ khi sử dụng tính năng nạp tiền điện thoại cho thuê bao trong danh bạ
 ```
 
 ### Thêm Capabilities
@@ -149,31 +156,33 @@ Bộ key bao gồm: appId, publicKey, privateKey. Liên hệ PayME để đượ
 
 ### Khởi tạo Miniapp
 
-<strong>*Việc khởi tạo này cũng sẽ bắt đầu việc kiểm tra và download phiên bản của PayMEMiniApp, do đó khuyến khích khởi tạo càng sớm càng tốt khi chạy app.*<strong>
+<strong>_Việc khởi tạo này cũng sẽ bắt đầu việc kiểm tra và download phiên bản của PayMEMiniApp, do đó khuyến khích khởi tạo càng sớm càng tốt khi chạy app._<strong>
 
-| **Tham số**    | **Bắt buộc** | **Kiểu dữ liệu**                     |
-| -------------- | ------------ | ------------------------------------ |
-| **appId**      | Có           | String                               |
-| **publicKey**  | Có           | String                               |
-| **privateKey** | Có           | String                               |
-| **locale**        | Không        | String (từ phiên bản 0.5.3 trở về sau)                            |
-| **env**        | Không        | String                               |
-| **mode**       | Không        | String                               |
+| **Tham số**    | **Bắt buộc** | **Kiểu dữ liệu**                       |
+| -------------- | ------------ | -------------------------------------- |
+| **appId**      | Có           | String                                 |
+| **publicKey**  | Có           | String                                 |
+| **privateKey** | Có           | String                                 |
+| **locale**     | Không        | String (từ phiên bản 0.5.3 trở về sau) |
+| **env**        | Không        | String                                 |
+| **mode**       | Không        | String                                 |
 
 Chú thích:
+
 - appId: mỗi đối tác tích hợp PayME Miniapp sẽ được cấp 1 appId riêng biệt (lưu ý: giá trị appId được lấy từ biến x-api-client trên dashboard)
 - publicKey, privateKey: cặp key được gen khi đăng ký đối tác với PayME
 - locale: Ngôn ngữ khởi tạo PayMEMiniApp (vi, en)
 - env: Môi trường khởi tạo PayMEMiniApp (PRODUCTION, SANDBOX)
-- mode: Chế độ sử dụng PayMEMiniApp (miniapp_sandbox, miniapp_product) 
+- mode: Chế độ sử dụng PayMEMiniApp (miniapp_sandbox, miniapp_product)
 
 ```javascript
-import { init } from 'payme-mini-app'
+import { init } from "payme-mini-app";
 
-init(appId, publicKey, privateKey, locale, env, mode)
+init(appId, publicKey, privateKey, locale, env, mode);
 ```
 
 Ví dụ:
+
 ```javascript
 init(
     appId: "559163930378",
@@ -205,10 +214,10 @@ init(
 Sử dụng hàm này để thiết lập việc hứng các events onResponse hoặc onError được bắn ra trong quá trình thao tác với Miniapp
 
 ```javascript
-import { PayMEMiniAppEvents } from 'payme-mini-app'
+import { PayMEMiniAppEvents } from "payme-mini-app";
 
-PayMEMiniAppEvents.addListener('onResponse', listener)
-PayMEMiniAppEvents.addListener('onError', listener)
+PayMEMiniAppEvents.addListener("onResponse", listener);
+PayMEMiniAppEvents.addListener("onError", listener);
 ```
 
 | **Tham số**    | **Bắt buộc** | **Kiểu dữ liệu**                         |
@@ -217,6 +226,7 @@ PayMEMiniAppEvents.addListener('onError', listener)
 | **onError**    | Không        | (ActionOpenMiniApp, PayMEError?) -> Unit |
 
 Chú thích:
+
 - onResponse: event onResponse được bắn khi kết thúc 1 action thao tác Miniapp (ví dụ: thanh toán thành công), event này được bắn kèm action tạo ra event này và 1 JSONObject chứa các dữ liệu thêm
 - onError: event onError được bắn khi có lỗi xảy ra trong quá trình thao tác với Miniapp, event này được bắn kèm action đang thao tác và 1 PayMEError chứa thông tin thêm về lỗi
 
@@ -224,17 +234,17 @@ Chi tiết các kiểu dữ liệu
 
 **ActionOpenMiniApp:** (action thao tác Miniapp)
 
-| **Giá trị** | **Giải thích** |
-|-----------------|-----------------------------------------------------------------------------------------------------------|
-| **PAYME** | Dùng riêng cho app ví PayME |  
-| **OPEN** | Nếu chưa kích hoạt tài khoản ví PayME thì mở giao diện kích hoạt, nếu đã kích hoạt thì mở giao diện trang chủ ví PayME |
-| **PAY** | Mở giao diện thanh toán đơn hàng |
-| **GET_BALANCE** | Lấy số dư ví PayME |
-| **SERVICE** | Mở giao diện thanh toán dịch vụ |
-| **DEPOSIT** | Mở giao diện nạp tiền |
-| **WITHDRAW** | Mở giao diện rút tiền |
-| **TRANSFER** | Mở giao diện chuyển tiền |
-| **KYC** | Mở giao diện kyc |
+| **Giá trị**     | **Giải thích**                                                                                                         |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **PAYME**       | Dùng riêng cho app ví PayME                                                                                            |
+| **OPEN**        | Nếu chưa kích hoạt tài khoản ví PayME thì mở giao diện kích hoạt, nếu đã kích hoạt thì mở giao diện trang chủ ví PayME |
+| **PAY**         | Mở giao diện thanh toán đơn hàng                                                                                       |
+| **GET_BALANCE** | Lấy số dư ví PayME                                                                                                     |
+| **SERVICE**     | Mở giao diện thanh toán dịch vụ                                                                                        |
+| **DEPOSIT**     | Mở giao diện nạp tiền                                                                                                  |
+| **WITHDRAW**    | Mở giao diện rút tiền                                                                                                  |
+| **TRANSFER**    | Mở giao diện chuyển tiền                                                                                               |
+| **KYC**         | Mở giao diện kyc                                                                                                       |
 
 **PayMEError:**(lỗi trong quá trình thao tác Miniapp)
 | **Thuộc tính** | **Kiểu dữ liệu** | **Giải thích** |
@@ -242,7 +252,6 @@ Chi tiết các kiểu dữ liệu
 | **type** | enum "MiniApp", "UserCancel", "Network" | Nhóm lỗi: lỗi trong Miniapp, người dùng đóng Miniapp hoặc lỗi do kết nối mạng |  
 | **code** | String | Mã lỗi |
 | **description** | String | Miêu tả lỗi |
-
 
 ### Hàm openMiniApp:
 
@@ -270,11 +279,12 @@ Chi tiết các OpenMiniAppData:
 | **phone** | Có | String | Số điện thoại của tài khoản |
 
 Ví dụ:
+
 ```javascript
-open('screen', {
-  action: 'OPEN',
-  phone: '0123456789',
-})
+open("screen", {
+  action: "OPEN",
+  phone: "0123456789",
+});
 ```
 
 **PAY:** đối tác dùng action này khi muốn mở giao diện thanh toán của Miniapp
@@ -293,27 +303,29 @@ Chi tiết PaymentData:
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Ví dụ:
+
 ```javascript
-open('screen', {
-  action: 'PAY',
-  phone: '0123456789',
+open("screen", {
+  action: "PAY",
+  phone: "0123456789",
   data: {
     amount: 10000,
     note: "Thanh toán cho đơn hàng abc",
     transactionId: "123",
     ipnUrl: "www.google.com",
-  }
-})
+  },
+});
 ```
 
 **PAYMENT:** đối tác dùng action này khi muốn mở giao diện thanh toán của Miniapp
-- Các bước lấy danh sách phương thức và tạo mã giao dịch sẽ được thực hiện ở ứng dụng của đối tác (Chi tiết xin liên hệ PayME)
-  * Dùng kết nối qua API để lấy về danh sách phương thức
-  * Sau đó chọn phương thức sẽ gọi API tạo giao dịch để lấy về transaction
 
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|------------------|--------------------------------------------|
-| **data** | Có | PaymentDirectData | Thông tin thêm để phục vụ việc thanh toán |
+- Các bước lấy danh sách phương thức và tạo mã giao dịch sẽ được thực hiện ở ứng dụng của đối tác (Chi tiết xin liên hệ PayME)
+  - Dùng kết nối qua API để lấy về danh sách phương thức
+  - Sau đó chọn phương thức sẽ gọi API tạo giao dịch để lấy về transaction
+
+| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu**  | **Giải thích**                            |
+| -------------- | ------------ | ----------------- | ----------------------------------------- |
+| **data**       | Có           | PaymentDirectData | Thông tin thêm để phục vụ việc thanh toán |
 
 Chi tiết PaymentDirectData:
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
@@ -322,13 +334,14 @@ Chi tiết PaymentDirectData:
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Ví dụ:
+
 ```javascript
-open('screen', {
-  action: 'PAYMENT',
+open("screen", {
+  action: "PAYMENT",
   data: {
-    transaction: "123456"
-  }
-})
+    transaction: "123456",
+  },
+});
 ```
 
 **DEPOSIT:** đối tác dùng action này khi muốn mở giao diện nạp tiền vào ví PayME
@@ -338,14 +351,15 @@ open('screen', {
 | **additionalData** | Có | DepositWithdrawTransferData | Thông tin thêm để phục vụ việc |
 
 Ví dụ:
+
 ```javascript
-open('screen', {
-  action: 'DEPOSIT',
-  phone: '0123456789',
+open("screen", {
+  action: "DEPOSIT",
+  phone: "0123456789",
   data: {
-    amount: 10000
-  }
-})
+    amount: 10000,
+  },
+});
 ```
 
 **WITHDRAW:** đối tác dùng action này khi muốn mở giao diện rút tiền ra ví PayME
@@ -355,14 +369,15 @@ open('screen', {
 | **additionalData** | Có | DepositWithdrawTransferData | Thông tin thêm để phục vụ việc |
 
 Ví dụ:
+
 ```javascript
-open('screen', {
-  action: 'WITHDRAW',
-  phone: '0123456789',
+open("screen", {
+  action: "WITHDRAW",
+  phone: "0123456789",
   data: {
-    amount: 10000
-  }
-})
+    amount: 10000,
+  },
+});
 ```
 
 **TRANSFER:** đối tác dùng action này khi muốn mở giao diện chuyển tiền
@@ -372,14 +387,15 @@ open('screen', {
 | **additionalData** | Có | DepositWithdrawTransferData | Thông tin thêm để phục vụ việc |
 
 Ví dụ:
+
 ```javascript
-open('screen', {
-  action: 'TRANSFER',
-  phone: '0123456789',
+open("screen", {
+  action: "TRANSFER",
+  phone: "0123456789",
   data: {
-    amount: 10000
-  }
-})
+    amount: 10000,
+  },
+});
 ```
 
 Chi tiết DepositWithdrawTransferData:
@@ -395,11 +411,12 @@ Chi tiết DepositWithdrawTransferData:
 | **phone** | Có | String | Số điện thoại của tài khoản |
 
 Ví dụ:
+
 ```javascript
-open('screen', {
-  action: 'KYC',
-  phone: '0123456789'
-})
+open("screen", {
+  action: "KYC",
+  phone: "0123456789",
+});
 ```
 
 **SERVICE:** đối tác dùng action này khi muốn mở giao diện thanh toán dịch vụ
@@ -416,26 +433,27 @@ Chi tiết ServiceData:
 
 Danh sách mã dịch vụ:
 
-| **Giá trị** | **Giải thích** |
-|-----------------|-----------------------------------------------------------------------------------------------------------|
-| **POWE** | Điện |  
-| **WATE** | Nước |
-| **ADSL** | Internet |
-| **TIVI** | Truyền hình |
-| **PPMB** | Điện thoại trả sau |
-| **MOBILE_CARD** | Thẻ điện thoại |
-| **MOBILE_TOPUP** | Nạp điện thoại |
-| **GAME_CARD** | Thẻ game |
+| **Giá trị**      | **Giải thích**     |
+| ---------------- | ------------------ |
+| **POWE**         | Điện               |
+| **WATE**         | Nước               |
+| **ADSL**         | Internet           |
+| **TIVI**         | Truyền hình        |
+| **PPMB**         | Điện thoại trả sau |
+| **MOBILE_CARD**  | Thẻ điện thoại     |
+| **MOBILE_TOPUP** | Nạp điện thoại     |
+| **GAME_CARD**    | Thẻ game           |
 
 Ví dụ:
+
 ```javascript
-open('screen', {
-  action: 'SERVICE',
-  phone: '0123456789',
+open("screen", {
+  action: "SERVICE",
+  phone: "0123456789",
   data: {
-    code: 'POWE'
-  }
-})
+    code: "POWE",
+  },
+});
 ```
 
 ### Hàm getBalance
@@ -476,6 +494,6 @@ import { setLanguage } from 'payme-mini-app'
 setLanguage(language: String)
 ```
 
-| **Tham số** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**                                                      |
-| ----------- | ------------ | ---------------- | ------------------------------------------------------------------- |
-| **language**   | Có           | String           | Ngôn ngữ cần đổi (vi, en) |
+| **Tham số**  | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**            |
+| ------------ | ------------ | ---------------- | ------------------------- |
+| **language** | Có           | String           | Ngôn ngữ cần đổi (vi, en) |
