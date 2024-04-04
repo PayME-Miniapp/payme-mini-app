@@ -82,8 +82,6 @@ end
 
 Update the Info.plist with the keys below to ensure PayMEMiniApp can function properly
 
-![img.png](documents/info_plist.png)
-
 ```swift
 Privacy - Camera Usage Description
 Privacy - Photo Library Usage Description

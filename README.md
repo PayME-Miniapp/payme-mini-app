@@ -83,7 +83,6 @@ end
 ### Info.plist
 
 Cập nhật Info.plist những key như bên dưới để đảm bảo PayMEMiniApp có thể hoạt động
-![img.png](documents/info_plist.png)
 
 ```swift
 Privacy - Camera Usage Description
