@@ -342,6 +342,39 @@ open("screen", {
 });
 ```
 
+**TRANSFER_QR:** Partners use this action when they want to open the payment interface of the Miniapp
+
+- This action is used to transfer money from PayME wallet to the destination account provided by the partner.
+
+| **Attribute** | **Required** | **Data Type**  | **Explanation**                              |
+| ------------- | ------------ | -------------- | -------------------------------------------- |
+| **data**      | Yes          | TransferQRData | Additional information to facilitate payment |
+
+Details of PaymentDirectData:
+| **Attribute** | **Required** | **Data Type** | **Explanation** |
+|---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
+| **amount** | Yes | Int | Transaction amount (if no amount is provided, pass 0) |
+| **bankNumber** | Yes | String | Bank account number |
+| **swiftCode** | Yes | String | Bank's swiftCode |
+| **cardHolder** | Yes | String | Cardholder's name |
+| **note** | No | String | Transaction note |
+| **isShowResult** | No | Boolean | CShould PayME's result screen be displayed? (Default: true) |
+
+Example:
+
+```javascript
+open("screen", {
+  action: "TRANSFER_QR",
+  data: {
+    amount: 20000,
+    bankNumber: "9704000000000018",
+    swiftCode: "SBITVNVX",
+    cardHolder: "Nguyen Van A",
+    note: "Test"
+  },
+});
+```
+
 **DEPOSIT:** Partners use this action when they want to open the interface to deposit money into the PayME wallet
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|--------------------------------------|----------------------------------|

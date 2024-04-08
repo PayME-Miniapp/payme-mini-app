@@ -343,6 +343,39 @@ open("screen", {
 });
 ```
 
+**TRANSFER_QR:** đối tác dùng action này khi muốn mở giao diện thanh toán của Miniapp
+
+- Action này dùng để thực hiện việc chuyển tiền từ ví PayME đi đến tài khoản đích do đối tác truyền qua
+
+| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**                            |
+| -------------- | ------------ | ---------------- | ----------------------------------------- |
+| **data**       | Có           | TransferQRData   | Thông tin thêm để phục vụ việc thanh toán |
+
+Chi tiết TransferQRData:
+| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
+|---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
+| **amount** | Có | Int | Số tiền giao dịch (nếu không có số tiền thì truyền 0) |
+| **bankNumber** | Có | String | Số thẻ ngân hàng |
+| **swiftCode** | Có | String | Mã swiftCode của ngân hàng |
+| **cardHolder** | Có | String | Tên chủ thẻ |
+| **note** | Không | String | Ghi chú của giao dịch |
+| **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
+
+Ví dụ:
+
+```javascript
+open("screen", {
+  action: "TRANSFER_QR",
+  data: {
+    amount: 20000,
+    bankNumber: "9704000000000018",
+    swiftCode: "SBITVNVX",
+    cardHolder: "Nguyen Van A",
+    note: "Test"
+  },
+});
+```
+
 **DEPOSIT:** đối tác dùng action này khi muốn mở giao diện nạp tiền vào ví PayME
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
 |---------------------|--------------|--------------------------------------|----------------------------------|
