@@ -343,7 +343,7 @@ open("screen", {
 });
 ```
 
-**TRANSFER_QR:** đối tác dùng action này khi muốn mở giao diện thanh toán của Miniapp
+**TRANSFER_QR:** đối tác dùng action này khi muốn mở giao diện thanh toán của Miniapp (từ phiên bản 0.6.2 trở về sau)
 
 - Action này dùng để thực hiện việc chuyển tiền từ ví PayME đi đến tài khoản đích do đối tác truyền qua
 

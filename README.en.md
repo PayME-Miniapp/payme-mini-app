@@ -342,7 +342,7 @@ open("screen", {
 });
 ```
 
-**TRANSFER_QR:** Partners use this action when they want to open the payment interface of the Miniapp
+**TRANSFER_QR:** Partners use this action when they want to open the payment interface of the Miniapp (from version 0.6.2 and above)
 
 - This action is used to transfer money from PayME wallet to the destination account provided by the partner.
 
