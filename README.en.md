@@ -323,6 +323,7 @@ open("screen", {
 
 | **Attribute** | **Required** | **Data Type**     | **Explanation**                              |
 | ------------- | ------------ | ----------------- | -------------------------------------------- |
+| **phone** | Yes | String | Phone number of the account |
 | **data**      | Yes          | PaymentDirectData | Additional information to facilitate payment |
 
 Details of PaymentDirectData:

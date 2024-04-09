@@ -11,6 +11,10 @@
 
 [Cách sử dụng](#cách-sử-dụng)
 
+[Các hàm](#các-hàm)
+- [Open Miniapp](#hàm-openminiapp)
+  - [open](#open)
+
 <!-- - [Khởi tạo PayMEMiniApp](#khoi-tao-paymeminiapp) -->
 
 # Cài đặt
@@ -272,7 +276,7 @@ open(
 
 Chi tiết các OpenMiniAppData:
 
-**OPEN:** đối tác dùng action này khi muốn mở giao diện trang chủ ví PayME để sử dụng các dịch vụ tiện ích của PayME. Nếu chưa kích hoạt tài khoản ví PayME thì kích hoạt, nếu đã kích hoạt thì mở giao diện trang chủ ví PayME
+#### **OPEN:** đối tác dùng action này khi muốn mở giao diện trang chủ ví PayME để sử dụng các dịch vụ tiện ích của PayME. Nếu chưa kích hoạt tài khoản ví PayME thì kích hoạt, nếu đã kích hoạt thì mở giao diện trang chủ ví PayME
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
 |---------------------|--------------|------------------|------------------------------|
 | **phone** | Có | String | Số điện thoại của tài khoản |
@@ -324,6 +328,7 @@ open("screen", {
 
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu**  | **Giải thích**                            |
 | -------------- | ------------ | ----------------- | ----------------------------------------- |
+| **phone** | Không | String | Số điện thoại của tài khoản |
 | **data**       | Có           | PaymentDirectData | Thông tin thêm để phục vụ việc thanh toán |
 
 Chi tiết PaymentDirectData:
