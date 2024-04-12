@@ -303,6 +303,7 @@ Chi tiết PaymentData:
 | **amount** | Có | Int | Tổng số tiền giao dịch |  
 | **note** | Không | String | Ghi chú của giao dịch |
 | **ipnUrl** | Không | String | Đường dẫn để server PayME ipn đến khi giao dịch có tiến triển (thành công/thất bại) |
+| **extraData** | Không | Object |  Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công |
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Ví dụ:
@@ -335,6 +336,7 @@ Chi tiết PaymentDirectData:
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
 |---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
 | **transaction** | Có | String | Mã giao dịch |
+| **extraData** | Không | Object |  Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công |
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Ví dụ:
@@ -364,6 +366,7 @@ Chi tiết TransferQRData:
 | **swiftCode** | Có | String | Mã swiftCode của ngân hàng |
 | **cardHolder** | Có | String | Tên chủ thẻ |
 | **note** | Không | String | Ghi chú của giao dịch |
+| **extraData** | Không | Object |  Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công |
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Ví dụ:
@@ -440,6 +443,7 @@ Chi tiết DepositWithdrawTransferData:
 |---------------------|--------------|------------------|-------------------------------------------------------|
 | **description** | Không | String | Miêu tả giao dịch |  
 | **amount** | Không | Int | Tổng số tiền giao dịch |
+| **extraData** | Không | Object |  Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công |
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 **KYC:** đối tác dùng action này khi muốn mở giao diện kyc
@@ -466,6 +470,7 @@ Chi tiết ServiceData:
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
 |---------------------|--------------|------------------|-------------------------------------------------------|
 | **code** | Không | String | Mã dịch vụ |
+| **extraData** | Không | Object |  Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công |
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Danh sách mã dịch vụ:

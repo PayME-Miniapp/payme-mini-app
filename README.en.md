@@ -297,6 +297,7 @@ Details of PaymentData:
 | **amount** | Yes | Int | Total transaction amount |  
 | **note** | No | String | Transaction note |
 | **ipnUrl** | No | String | Path for PayME server ipn to check when the transaction progresses (success/failure) |
+| **extraData** | No | Object |  Additional data specified by the partner, this data will be returned to the partner upon successful payment. |
 | **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 Example:
@@ -330,6 +331,7 @@ Details of PaymentDirectData:
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
 | **transaction** | Yes | String | Transaction code |
+| **extraData** | No | Object |  Additional data specified by the partner, this data will be returned to the partner upon successful payment. |
 | **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 Example:
@@ -359,6 +361,7 @@ Details of PaymentDirectData:
 | **swiftCode** | Yes | String | Bank's swiftCode |
 | **cardHolder** | Yes | String | Cardholder's name |
 | **note** | No | String | Transaction note |
+| **extraData** | No | Object |  Additional data specified by the partner, this data will be returned to the partner upon successful payment. |
 | **isShowResult** | No | Boolean | CShould PayME's result screen be displayed? (Default: true) |
 
 Example:
@@ -435,6 +438,7 @@ Details of DepositWithdrawTransferData:
 |---------------------|--------------|------------------|-------------------------------------------------------|
 | **description** | No | String | Transaction description |  
 | **amount** | No | Int | Total transaction amount |
+| **extraData** | No | Object |  Additional data specified by the partner, this data will be returned to the partner upon successful payment. |
 | **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 **KYC:** Partners use this action when they want to open the KYC interface
@@ -461,6 +465,7 @@ Details of ServiceData:
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------|--------------|---------------|-----------------|
 | **code** | No | String | Service code |
+| **extraData** | No | Object |  Additional data specified by the partner, this data will be returned to the partner upon successful payment. |
 | **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 List of service codes:
