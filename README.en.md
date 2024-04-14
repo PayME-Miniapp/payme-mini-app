@@ -297,7 +297,7 @@ Details of PaymentData:
 | **amount** | Yes | Int | Total transaction amount |  
 | **note** | No | String | Transaction note |
 | **ipnUrl** | No | String | Path for PayME server ipn to check when the transaction progresses (success/failure) |
-| **extraData** | No | Object |  Additional data specified by the partner, this data will be returned to the partner upon successful payment. |
+| **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
 | **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 Example:
@@ -324,14 +324,14 @@ open("screen", {
 
 | **Attribute** | **Required** | **Data Type**     | **Explanation**                              |
 | ------------- | ------------ | ----------------- | -------------------------------------------- |
-| **phone** | No | String | Phone number of the account |
+| **phone**     | No           | String            | Phone number of the account                  |
 | **data**      | Yes          | PaymentDirectData | Additional information to facilitate payment |
 
 Details of PaymentDirectData:
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
 | **transaction** | Yes | String | Transaction code |
-| **extraData** | No | Object |  Additional data specified by the partner, this data will be returned to the partner upon successful payment. |
+| **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
 | **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 Example:
@@ -360,8 +360,9 @@ Details of PaymentDirectData:
 | **bankNumber** | Yes | String | Bank account number |
 | **swiftCode** | Yes | String | Bank's swiftCode |
 | **cardHolder** | Yes | String | Cardholder's name |
+| **partnerTransaction** | No | String | Partner's Transaction (from version 0.6.8 and above) |
 | **note** | No | String | Transaction note |
-| **extraData** | No | Object |  Additional data specified by the partner, this data will be returned to the partner upon successful payment. |
+| **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
 | **isShowResult** | No | Boolean | CShould PayME's result screen be displayed? (Default: true) |
 
 Example:
@@ -374,7 +375,7 @@ open("screen", {
     bankNumber: "9704000000000018",
     swiftCode: "SBITVNVX",
     cardHolder: "Nguyen Van A",
-    note: "Test"
+    note: "Test",
   },
 });
 ```
@@ -438,7 +439,7 @@ Details of DepositWithdrawTransferData:
 |---------------------|--------------|------------------|-------------------------------------------------------|
 | **description** | No | String | Transaction description |  
 | **amount** | No | Int | Total transaction amount |
-| **extraData** | No | Object |  Additional data specified by the partner, this data will be returned to the partner upon successful payment. |
+| **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
 | **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 **KYC:** Partners use this action when they want to open the KYC interface
@@ -465,7 +466,7 @@ Details of ServiceData:
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------|--------------|---------------|-----------------|
 | **code** | No | String | Service code |
-| **extraData** | No | Object |  Additional data specified by the partner, this data will be returned to the partner upon successful payment. |
+| **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
 | **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 List of service codes:

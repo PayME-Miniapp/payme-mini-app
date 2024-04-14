@@ -12,6 +12,7 @@
 [Cách sử dụng](#cách-sử-dụng)
 
 [Các hàm](#các-hàm)
+
 - [Open Miniapp](#hàm-openminiapp)
   - [open](#open)
 
@@ -277,9 +278,10 @@ open(
 Chi tiết các OpenMiniAppData:
 
 #### **OPEN:** đối tác dùng action này khi muốn mở giao diện trang chủ ví PayME để sử dụng các dịch vụ tiện ích của PayME. Nếu chưa kích hoạt tài khoản ví PayME thì kích hoạt, nếu đã kích hoạt thì mở giao diện trang chủ ví PayME
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|------------------|------------------------------|
-| **phone** | Có | String | Số điện thoại của tài khoản |
+
+| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**              |
+| -------------- | ------------ | ---------------- | --------------------------- |
+| **phone**      | Có           | String           | Số điện thoại của tài khoản |
 
 Ví dụ:
 
@@ -303,7 +305,7 @@ Chi tiết PaymentData:
 | **amount** | Có | Int | Tổng số tiền giao dịch |  
 | **note** | Không | String | Ghi chú của giao dịch |
 | **ipnUrl** | Không | String | Đường dẫn để server PayME ipn đến khi giao dịch có tiến triển (thành công/thất bại) |
-| **extraData** | Không | Object |  Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công |
+| **extraData** | Không | Object | Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công (từ version 0.6.6 trở về sau) |
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Ví dụ:
@@ -329,14 +331,14 @@ open("screen", {
 
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu**  | **Giải thích**                            |
 | -------------- | ------------ | ----------------- | ----------------------------------------- |
-| **phone** | Không | String | Số điện thoại của tài khoản |
+| **phone**      | Không        | String            | Số điện thoại của tài khoản               |
 | **data**       | Có           | PaymentDirectData | Thông tin thêm để phục vụ việc thanh toán |
 
 Chi tiết PaymentDirectData:
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
 |---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
 | **transaction** | Có | String | Mã giao dịch |
-| **extraData** | Không | Object |  Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công |
+| **extraData** | Không | Object | Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công (từ version 0.6.6 trở về sau) |
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Ví dụ:
@@ -365,8 +367,9 @@ Chi tiết TransferQRData:
 | **bankNumber** | Có | String | Số thẻ ngân hàng |
 | **swiftCode** | Có | String | Mã swiftCode của ngân hàng |
 | **cardHolder** | Có | String | Tên chủ thẻ |
+| **partnerTransaction** | No | String | Mã giao dịch của đối tác (từ version 0.6.8 trở về sau) |
 | **note** | Không | String | Ghi chú của giao dịch |
-| **extraData** | Không | Object |  Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công |
+| **extraData** | Không | Object | Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công (từ version 0.6.6 trở về sau) |
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Ví dụ:
@@ -379,7 +382,7 @@ open("screen", {
     bankNumber: "9704000000000018",
     swiftCode: "SBITVNVX",
     cardHolder: "Nguyen Van A",
-    note: "Test"
+    note: "Test",
   },
 });
 ```
@@ -443,7 +446,7 @@ Chi tiết DepositWithdrawTransferData:
 |---------------------|--------------|------------------|-------------------------------------------------------|
 | **description** | Không | String | Miêu tả giao dịch |  
 | **amount** | Không | Int | Tổng số tiền giao dịch |
-| **extraData** | Không | Object |  Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công |
+| **extraData** | Không | Object | Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công (từ version 0.6.6 trở về sau) |
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 **KYC:** đối tác dùng action này khi muốn mở giao diện kyc
@@ -470,7 +473,7 @@ Chi tiết ServiceData:
 | **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
 |---------------------|--------------|------------------|-------------------------------------------------------|
 | **code** | Không | String | Mã dịch vụ |
-| **extraData** | Không | Object |  Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công |
+| **extraData** | Không | Object | Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công (từ version 0.6.6 trở về sau) |
 | **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
 
 Danh sách mã dịch vụ:
