@@ -535,3 +535,13 @@ setLanguage(language: String)
 | **Attribute** | **Required** | **Data Type** | **Explanation**                     |
 | ------------- | ------------ | ------------- | ----------------------------------- |
 | **language**  | Yes          | String        | The language to switch to (vi, en). |
+
+### Function close (from version 0.7.0 and above)
+
+Partners use this function to close the mini-app.
+
+```javascript
+import { close } from 'payme-mini-app'
+
+close()
+```

@@ -542,3 +542,13 @@ setLanguage(language: String)
 | **Tham số**  | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**            |
 | ------------ | ------------ | ---------------- | ------------------------- |
 | **language** | Có           | String           | Ngôn ngữ cần đổi (vi, en) |
+
+### Hàm close (từ phiên bản 0.7.0 trở về sau)
+
+Đối tác dùng hàm này để đóng miniapp
+
+```javascript
+import { close } from 'payme-mini-app'
+
+close()
+```
