@@ -56,10 +56,10 @@ allprojects {
 Thêm dòng này vào Podfile:
 
 ```swift
-use_frameworks! :linkage => :static
+use_frameworks!
 ```
 
-Thêm vào cuối Podfile:
+Thêm vào target:
 
 ```swift
 $dynamic_framework = ['PayMEMiniApp', 'CryptoSwift', 'SwiftyRSA', 'GCDWebServer', 'NSLogger', 'lottie-ios', 'SwiftyJSON', 'ZIPFoundation', 'Mixpanel-swift']

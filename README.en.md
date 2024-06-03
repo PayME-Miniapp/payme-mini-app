@@ -49,10 +49,10 @@ allprojects {
 Add this line to Podfile:
 
 ```swift
-use_frameworks! :linkage => :static
+use_frameworks!
 ```
 
-Add at the end of the Podfile:
+Add to target:
 
 ```swift
 $dynamic_framework = ['PayMEMiniApp', 'CryptoSwift', 'SwiftyRSA', 'GCDWebServer', 'NSLogger', 'lottie-ios', 'SwiftyJSON', 'ZIPFoundation', 'Mixpanel-swift']
