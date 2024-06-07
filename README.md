@@ -53,10 +53,12 @@ allprojects {
 
 ## iOS
 
+⚠️ Miniapp hỗ trợ iOS 13+.
+
 Thêm dòng này vào Podfile:
 
 ```swift
-use_frameworks!
+use_frameworks! :linkage => :static
 ```
 
 Thêm vào target:
@@ -69,7 +71,6 @@ post_install do |installer|
     target.build_configurations.each do |config|
       if $dynamic_framework.include?(target.name)
         config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.4'
       end
     end
   end
@@ -551,7 +552,7 @@ setLanguage(language: String)
 Đối tác dùng hàm này để đóng miniapp
 
 ```javascript
-import { close } from 'payme-mini-app'
+import { close } from "payme-mini-app";
 
-close()
+close();
 ```

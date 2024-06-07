@@ -46,10 +46,12 @@ allprojects {
 
 ## iOS
 
+⚠️ Miniapp supports iOS 13+.
+
 Add this line to Podfile:
 
 ```swift
-use_frameworks!
+use_frameworks! :linkage => :static
 ```
 
 Add to target:
@@ -62,7 +64,6 @@ post_install do |installer|
     target.build_configurations.each do |config|
       if $dynamic_framework.include?(target.name)
         config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.4'
       end
     end
   end
