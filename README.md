@@ -53,7 +53,7 @@ allprojects {
 
 ## iOS
 
-⚠️ Miniapp hỗ trợ iOS 13+.
+⚠️ Miniapp chỉ hỗ trợ iOS 13+.
 
 Thêm dòng này vào Podfile:
 
@@ -93,11 +93,15 @@ end
 
 Cập nhật Info.plist những key như bên dưới để đảm bảo PayMEMiniApp có thể hoạt động
 
+⚠️ Từ version 0.9.0 cần thêm quyền NFC để thực hiện việc KYC qua NFC
+
 ```swift
 Privacy - Camera Usage Description
 Privacy - Photo Library Usage Description
 Privacy - Photo Library Additions Usage Description
 Privacy - Contacts Usage Description
+Privacy - Contacts Usage Description
+Privacy - NFC Scan Usage Description
 ```
 
 Key:
@@ -107,6 +111,7 @@ NSCameraUsageDescription
 NSPhotoLibraryUsageDescription
 NSPhotoLibraryAddUsageDescription
 NSContactsUsageDescription
+NFCReaderUsageDescription
 ```
 
 Giải thích:
@@ -116,15 +121,22 @@ Giải thích:
 - NSPhotoLibraryUsageDescription: Quyền sử dụng hình ảnh trong thư viện khi sử dụng tính năng tải QR Code
 - NSPhotoLibraryAddUsageDescription: Quyền thêm hình ảnh vào trong thư viện khi sử dụng tính năng tải QR Code
 - NSContactsUsageDescription: Quyền truy cập danh bạ khi sử dụng tính năng nạp tiền điện thoại cho thuê bao trong danh bạ
+- NFCReaderUsageDescription: Quyền truy cập NFC của thiết bị khi sử dụng tính năng eKYC bằng NFC
 ```
 
 ### Thêm Capabilities
 
 Ở XCode, chọn app của bạn ở mục Targets -> Signing & Capabilities -> Nhấn dấu "+" ở góc trên bên phải để mở cửa sổ thêm capability cho app
 
-![img_1.png](documents/capabilities.png)
+⚠️ Từ version 0.9.0 cần thêm capabilities Near Field Communication Tag Reading để hỗ trợ việc quét NFC
+
+Tìm và chọn "Near Field Communication Tag Reading"
+
+![img_1.png](documents/capabilities2.png)
 
 Tìm và chọn "Background Modes", bật lựa chọn "Background Fetch"
+
+![img_2.png](documents/capabilities1.png)
 
 ![img.png](documents/background_fetch.png)
 

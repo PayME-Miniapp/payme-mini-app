@@ -86,11 +86,14 @@ end
 
 Update the Info.plist with the keys below to ensure PayMEMiniApp can function properly
 
+⚠️ From version 0.9.0, NFC permission is required to supports NFC scanning.
+
 ```swift
 Privacy - Camera Usage Description
 Privacy - Photo Library Usage Description
 Privacy - Photo Library Additions Usage Description
 Privacy - Contacts Usage Description
+Privacy - NFC Scan Usage Description
 ```
 
 Raw Keys version:
@@ -100,6 +103,7 @@ NSCameraUsageDescription
 NSPhotoLibraryUsageDescription
 NSPhotoLibraryAddUsageDescription
 NSContactsUsageDescription
+NFCReaderUsageDescription
 ```
 
 Explanation:
@@ -109,15 +113,22 @@ Explanation:
 - NSPhotoLibraryUsageDescription: Permission to access photos in the library when using the QR Code download feature.
 - NSPhotoLibraryAddUsageDescription: Permission to access photos in the library when using the QR Code download feature.
 - NSContactsUsageDescription: Permission to access contacts when using the feature to top up phone credit for subscribers in the contacts list.
+- NFCReaderUsageDescription: Permission to access the device's NFC when using the eKYC feature via NFC
 ```
 
 ### Add Capabilities
 
 In XCode, select your app in Targets -> Signing & Capabilities -> Click on the "+" in the upper right corner to open the window to add capability for the app
 
-![img_1.png](documents/capabilities.png)
+⚠️ From version 0.9.0, add the Near Field Communication Tag Reading capability to support NFC scanning.
+
+Find and select "Near Field Communication Tag Reading".
+
+![img_1.png](documents/capabilities2.png)
 
 Find and select "Background Modes", turn on the option "Background Fetch"
+
+![img_1.png](documents/capabilities1.png)
 
 ![img.png](documents/background_fetch.png)
 
