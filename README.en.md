@@ -44,6 +44,10 @@ allprojects {
 }
 ```
 
+## Android
+
+⚠️  Miniapp supports Android version ≥ 26 and targetSdk level ≥ 33 due to the NFC feature.
+
 ## iOS
 
 ⚠️ Miniapp supports iOS 13+.

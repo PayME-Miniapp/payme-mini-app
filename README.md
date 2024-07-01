@@ -51,6 +51,10 @@ allprojects {
 }
 ```
 
+## Android
+
+⚠️  Miniapp chỉ hỗ trợ phiên bản Android ≥ 26 và targetSdk ≥ 33 do tính năng NFC.
+
 ## iOS
 
 ⚠️ Miniapp chỉ hỗ trợ iOS 13+.
