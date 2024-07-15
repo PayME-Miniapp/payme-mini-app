@@ -98,6 +98,7 @@ Privacy - Photo Library Usage Description
 Privacy - Photo Library Additions Usage Description
 Privacy - Contacts Usage Description
 Privacy - NFC Scan Usage Description
+ISO7816 application identifiers for NFC Tag Reader Session
 ```
 
 Raw Keys version:
@@ -108,6 +109,7 @@ NSPhotoLibraryUsageDescription
 NSPhotoLibraryAddUsageDescription
 NSContactsUsageDescription
 NFCReaderUsageDescription
+com.apple.developer.nfc.readersession.iso7816.select-identifiers
 ```
 
 Explanation:
@@ -118,6 +120,27 @@ Explanation:
 - NSPhotoLibraryAddUsageDescription: Permission to access photos in the library when using the QR Code download feature.
 - NSContactsUsageDescription: Permission to access contacts when using the feature to top up phone credit for subscribers in the contacts list.
 - NFCReaderUsageDescription: Permission to access the device's NFC when using the eKYC feature via NFC
+- com.apple.developer.nfc.readersession.iso7816.select-identifiers: ISO7816 application identifiers for NFC Tag Reader Session
+```
+
+Example Info.plist:
+```
+<key>NSCameraUsageDescription</key>
+<string>Chúng tôi cần dùng máy ảnh để sử dụng cho việc định danh và đọc mã vạch thanh toán</string>
+<key>NSContactsUsageDescription</key>
+<string>Cho phép truy cập Danh bạ để chọn nhanh số điện thoại của bạn bè</string>
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>Chúng tôi cần sử dụng thư viện ảnh của bạn để hiển thị ảnh trong ứng dụng hoặc chọn mã vạch thanh toán</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Chúng tôi cần sử dụng thư viện ảnh của bạn để hiển thị ảnh trong ứng dụng hoặc chọn mã vạch thanh toán</string>
+<key>NFCReaderUsageDescription</key>
+<string>eKYC cần sử dụng NFC</string>
+<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+<array>
+    <string>A0000002471001</string>
+    <string>A0000002472001</string>
+    <string>00000000000000</string>
+</array>
 ```
 
 ### Add Capabilities
