@@ -48,6 +48,19 @@ allprojects {
 
 ⚠️  Miniapp supports Android version ≥ 26 and targetSdk level ≥ 33 due to the NFC feature.
 
+⚠️ If you declared minifyEnabled = false. You should also define this in your proguard-rules.pro:
+
+```
+-keep class vn.kalapa.ekyc.**{*;}
+-keep class com.fis.ekyc.**{*;}
+-keep class com.fis.nfc.**{*;}
+-keep class retrofit2.**{*;}
+
+-keepclassmembers,allowobfuscation class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+```
+
 ## iOS
 
 ⚠️ Miniapp supports iOS 13+.
