@@ -81,6 +81,7 @@ post_install do |installer|
     target.build_configurations.each do |config|
       if $dynamic_framework.include?(target.name)
         config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       end
     end
   end
@@ -106,6 +107,7 @@ Update the Info.plist with the keys below to ensure PayMEMiniApp can function pr
 ⚠️ From version 0.9.0, NFC permission is required to supports NFC scanning.
 
 ```swift
+Queried URL Schemes
 Privacy - Camera Usage Description
 Privacy - Photo Library Usage Description
 Privacy - Photo Library Additions Usage Description
@@ -117,6 +119,7 @@ ISO7816 application identifiers for NFC Tag Reader Session
 Raw Keys version:
 
 ```swift
+LSApplicationQueriesSchemes
 NSCameraUsageDescription
 NSPhotoLibraryUsageDescription
 NSPhotoLibraryAddUsageDescription
@@ -128,6 +131,7 @@ com.apple.developer.nfc.readersession.iso7816.select-identifiers
 Explanation:
 
 ```text
+- LSApplicationQueriesSchemes: Declare URL schemes for depositing money via deeplink of VCB bank
 - NSCameraUsageDescription: Permission to take photos when using the KYC feature.
 - NSPhotoLibraryUsageDescription: Permission to access photos in the library when using the QR Code download feature.
 - NSPhotoLibraryAddUsageDescription: Permission to access photos in the library when using the QR Code download feature.
@@ -138,6 +142,10 @@ Explanation:
 
 Example Info.plist:
 ```
+<key>LSApplicationQueriesSchemes</key>
+<array>
+  <string>vcbpartner</string>
+</array>
 <key>NSCameraUsageDescription</key>
 <string>Chúng tôi cần dùng máy ảnh để sử dụng cho việc định danh và đọc mã vạch thanh toán</string>
 <key>NSContactsUsageDescription</key>
