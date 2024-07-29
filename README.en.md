@@ -46,7 +46,7 @@ allprojects {
 
 ## Android
 
-⚠️  Miniapp supports Android version ≥ 26 and targetSdk level ≥ 33 due to the NFC feature.
+⚠️ Miniapp supports Android version ≥ 26 and targetSdk level ≥ 33 due to the NFC feature.
 
 ⚠️ If you declared minifyEnabled = false. You should also define this in your proguard-rules.pro:
 
@@ -141,6 +141,7 @@ Explanation:
 ```
 
 Example Info.plist:
+
 ```
 <key>LSApplicationQueriesSchemes</key>
 <array>
@@ -240,6 +241,8 @@ import { init } from "payme-mini-app";
 
 init(appId, publicKey, privateKey, locale, env, mode);
 ```
+
+⚠️ Note: delete "\n" and newline in the publicKey + privateKey pair. See the example code below for details
 
 Example:
 
@@ -604,7 +607,7 @@ setLanguage(language: String)
 Partners use this function to close the mini-app.
 
 ```javascript
-import { close } from 'payme-mini-app'
+import { close } from "payme-mini-app";
 
-close()
+close();
 ```
