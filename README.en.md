@@ -146,6 +146,7 @@ Example Info.plist:
 <key>LSApplicationQueriesSchemes</key>
 <array>
   <string>vcbpartner</string>
+  <string>bidv.smartbanking.partner</string>
 </array>
 <key>NSCameraUsageDescription</key>
 <string>Chúng tôi cần dùng máy ảnh để sử dụng cho việc định danh và đọc mã vạch thanh toán</string>
