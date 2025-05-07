@@ -44,16 +44,15 @@ Update file build.gradle project
 allprojects {
   repositories {
     ...
-    maven {
-        url "https://jitpack.io"
-    }
+    maven { url 'https://jitpack.io' }
+    maven { url 'https://raw.githubusercontent.com/iProov/android/master/maven/' }
  }
 }
 ```
 
 ## Android
 
-⚠️ Miniapp chỉ hỗ trợ phiên bản Android ≥ 26 và targetSdk ≥ 33 do tính năng NFC.
+⚠️ Miniapp chỉ hỗ trợ phiên bản Android ≥ 26 và targetSdk ≥ 34 do tính năng NFC.
 
 ⚠️ Nếu ứng dụng có khai báo minifyEnabled = true. Bạn hãy thêm các rules này trong proguard-rules.pro như sau:
 
