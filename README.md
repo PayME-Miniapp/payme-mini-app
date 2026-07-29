@@ -36,9 +36,9 @@ yarn add payme-mini-app
 
 ## Android
 
-**Thêm maven jitpack.io**
+### Repository
 
-Update file build.gradle project
+Thêm JitPack và iProov Maven repository vào file `android/build.gradle` của app:
 
 ```kotlin
 allprojects {
@@ -46,13 +46,28 @@ allprojects {
     ...
     maven { url 'https://jitpack.io' }
     maven { url 'https://raw.githubusercontent.com/iProov/android/master/maven/' }
- }
+  }
 }
 ```
 
-## Android
+### Yêu cầu build
 
-⚠️ Miniapp chỉ hỗ trợ phiên bản Android ≥ 26 và targetSdk ≥ 34 do tính năng NFC.
+`android/build.gradle`:
+
+```kotlin
+buildscript {
+  ext {
+    minSdkVersion = 26
+    compileSdkVersion = 37
+    targetSdkVersion = 36
+    kotlinVersion = "2.2.10"
+  }
+
+  dependencies {
+    classpath("com.android.tools.build:gradle:9.1.1")
+  }
+}
+```
 
 ⚠️ Nếu ứng dụng có khai báo minifyEnabled = true. Bạn hãy thêm các rules này trong proguard-rules.pro như sau:
 
@@ -73,14 +88,27 @@ allprojects {
 
 Thêm dòng này vào Podfile:
 
-```swift
+```ruby
 use_frameworks! :linkage => :static
 ```
 
 Thêm vào target:
 
-```swift
-$dynamic_framework = ['PayMEMiniApp', 'CryptoSwift', 'SwiftyRSA', 'GCDWebServer', 'NSLogger', 'lottie-ios', 'SwiftyJSON', 'ZIPFoundation', 'Mixpanel-swift']
+```ruby
+$dynamic_framework = [
+  'PayMEMiniApp',
+  'CryptoSwift',
+  'SwiftyRSA',
+  'GCDWebServer',
+  'NSLogger',
+  'lottie-ios',
+  'SwiftyJSON',
+  'ZIPFoundation',
+  'Mixpanel-swift',
+  'jsonlogic',
+  'json-enum',
+  'MixpanelSwiftCommon'
+]
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
@@ -103,6 +131,8 @@ pre_install do |installer|
   end
 end
 ```
+
+Sau khi cập nhật Podfile, chạy lại `cd ios && pod install`.
 
 ## Thiết lập application tương thích với PayMEMiniApp
 
