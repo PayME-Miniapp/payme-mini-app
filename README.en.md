@@ -29,26 +29,40 @@ yarn add payme-mini-app
 
 ## Android
 
-**Add maven jitpack.io**
+### Repositories
 
-Update the project's build.gradle file
+Add the JitPack and iProov Maven repositories to the app's `android/build.gradle` file:
 
 ```kotlin
 allprojects {
   repositories {
     ...
-    maven {
-        url "https://jitpack.io"
-    }
- }
+    maven { url 'https://jitpack.io' }
+    maven { url 'https://raw.githubusercontent.com/iProov/android/master/maven/' }
+  }
 }
 ```
 
-## Android
+### Build requirements
 
-⚠️ Miniapp supports Android version ≥ 26 and targetSdk level ≥ 33 due to the NFC feature.
+`android/build.gradle`:
 
-⚠️ If you declared minifyEnabled = false. You should also define this in your proguard-rules.pro:
+```kotlin
+buildscript {
+  ext {
+    minSdkVersion = 26
+    compileSdkVersion = 37
+    targetSdkVersion = 36
+    kotlinVersion = "2.2.10"
+  }
+
+  dependencies {
+    classpath("com.android.tools.build:gradle:9.1.1")
+  }
+}
+```
+
+⚠️ If your app declares `minifyEnabled = true`, add these rules to `proguard-rules.pro`:
 
 ```
 -keep class vn.kalapa.ekyc.**{*;}
@@ -67,14 +81,27 @@ allprojects {
 
 Add this line to Podfile:
 
-```swift
+```ruby
 use_frameworks! :linkage => :static
 ```
 
 Add to target:
 
-```swift
-$dynamic_framework = ['PayMEMiniApp', 'CryptoSwift', 'SwiftyRSA', 'GCDWebServer', 'NSLogger', 'lottie-ios', 'SwiftyJSON', 'ZIPFoundation', 'Mixpanel-swift']
+```ruby
+$dynamic_framework = [
+  'PayMEMiniApp',
+  'CryptoSwift',
+  'SwiftyRSA',
+  'GCDWebServer',
+  'NSLogger',
+  'lottie-ios',
+  'SwiftyJSON',
+  'ZIPFoundation',
+  'Mixpanel-swift',
+  'jsonlogic',
+  'json-enum',
+  'MixpanelSwiftCommon'
+]
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
@@ -97,6 +124,8 @@ pre_install do |installer|
   end
 end
 ```
+
+After updating the Podfile, run `cd ios && pod install`.
 
 ## Set up the application to be compatible with PayMEMiniApp
 
