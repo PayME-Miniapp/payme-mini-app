@@ -3,13 +3,27 @@
 
 # payme-mini-app
 
-[Installation](#installation)
-
-- [Install Library](#install-library)
-- [Android](#android)
-- [iOS](#ios)
-
-[Usage](#usage)
+- [Installation](#installation)
+  - [Install Library](#install-library)
+  - [Android](#android)
+    - [Repositories](#repositories)
+    - [Build requirements](#build-requirements)
+  - [iOS](#ios)
+  - [Set up the application to be compatible with PayMEMiniApp](#set-up-the-application-to-be-compatible-with-paymeminiapp)
+    - [Info.plist](#infoplist)
+    - [Add Capabilities](#add-capabilities)
+    - [Set PayMEMiniApp Version Update](#set-paymeminiapp-version-update)
+- [Usage](#usage)
+  - [Initialize PayMEMiniApp](#initialize-paymeminiapp)
+    - [Set up the key set from PayME](#set-up-the-key-set-from-payme)
+    - [identityToken (from native SDK 0.8.0)](#identitytoken-from-native-sdk-080)
+    - [Initialize Miniapp](#initialize-miniapp)
+    - [Set up listeners](#set-up-listeners)
+    - [Function openMiniApp](#function-openminiapp)
+    - [Function getBalance](#function-getbalance)
+    - [Function getAccountInfo](#function-getaccountinfo)
+    - [Function setLanguage (from version 0.5.3 and above)](#function-setlanguage-from-version-053-and-above)
+    - [Function close (from version 0.7.0 and above)](#function-close-from-version-070-and-above)
 
 # Installation
 
@@ -245,9 +259,19 @@ func application(_ application: UIApplication, handleEventsForBackgroundURLSessi
 
 The key set includes: appId, publicKey, privateKey. Contact PayME for guidance.
 
+### identityToken (from native SDK 0.8.0)
+
+⚠️ From native SDK 0.8.0 (Android `native-android:0.8.0`, iOS `PayME-Miniapp 0.8.0`), the Miniapp no longer accepts a phone number (`phone`). Partners pass an `identityToken` instead of `phone`. This change is not compatible with versions that use native SDK 0.7.x.
+
+- The partner's server calls PayME's `identityToken` initialization API (server-to-server, RSA-signed with the partner's key) with the user's phone number, then passes the returned string to the Miniapp. Contact PayME for this API's documentation.
+- `identityToken` is a 64-character hex string bound to the `appId` and the declared phone number. It is valid for 15 minutes and can be reused within that time.
+- When the `identityToken` is invalid or expired, the Miniapp closes and fires the `onError` event with `code` `401`. The partner calls the initialization API again to get a new string, then reopens the Miniapp.
+- Keep `identityToken` in memory only: do not log it, store it on the device, or put it in a URL.
+- The **PAYMENT** action does not require an `identityToken`. Without it, the user pays as a guest (card, QR).
+
 ### Initialize Miniapp
 
-<strong>_Initializing this will also start checking and downloading the PayMEMiniApp version, so it is recommended to initialize it as early as possible when running the app._<strong>
+<strong>_Initializing this will also start checking and downloading the PayMEMiniApp version, so it is recommended to initialize it as early as possible when running the app._</strong>
 
 | **Parameter**  | **Required** | **Data Type**                         |
 | -------------- | ------------ | ------------------------------------- |
@@ -278,29 +302,16 @@ Example:
 
 ```javascript
 init(
-    appId: "559163930378",
-    publicKey: """
-    -----BEGIN PUBLIC KEY-----
-    MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAK0RONYVPYn/3IWloU83Qy16hKNHhlCx
-    gTJay6/rERk8tmsMbILLzTYW7H9WOqN2gS0s0ymD+3TxP+q+MxEp0qECAwEAAQ==
-    -----END PUBLIC KEY-----
-    """,
-    privateKey: """
-    -----BEGIN RSA PRIVATE KEY-----
-    MIIBOgIBAAJBAMXIuvTT8Z5U/AqyFvBbDApQ2STLm9Ca2nmu2pxqwhrhN+80mOLb
-    MzbQDRCNpro6S61d34A7cEIX/5gxxrAaVAkCAwEAAQJAfzB70e/uJHTgdHxcNgtG
-    7edaDMiHFhpPPwtL+GTLGH70yhFDs2eIXFHLY/wfRRcxzwGyGOyvXlGbDjsMFdpn
-    lQIhAPIoUVsADDfI4KNZEKHaJRVAmz2D0xdiB6R716HA7A0XAiEA0RcPxHzYLhVp
-    +adoGpJBq7e87BzQrVBJQFSOg8Kim98CIQCYmynyFEye1zwiFR3zMfuOsiFjGfFs
-    2f2A/f69VEwuTwIgFN/3jAdm0dsDdJBZHWYCtnEmpHAQCW2dkpWekNsKvwMCIGXm
-    rg+mppNNZQx6+6Swsp8L8Hgc+HikKy02Okijjw0W
-    -----END RSA PRIVATE KEY-----
-    """,
-    locale: "vi",
-    env: "SANDBOX",
-    mode: "miniapp_sandbox"
-)
+  "<APP_ID>", // appId
+  "-----BEGIN PUBLIC KEY-----<PUBLIC_KEY_BASE64>-----END PUBLIC KEY-----", // publicKey, on a single line
+  "-----BEGIN RSA PRIVATE KEY-----<PRIVATE_KEY_BASE64>-----END RSA PRIVATE KEY-----", // privateKey, on a single line
+  "vi", // locale, default "vi"
+  "SANDBOX", // env, default "PRODUCTION"
+  "miniapp_sandbox" // mode, default "miniapp_product"
+);
 ```
+
+⚠️ Do not put real keys in the README, public source code or screenshots. Use the key set PayME issues for your app.
 
 ### Set up listeners:
 
@@ -337,8 +348,13 @@ Details of data types
 | **WITHDRAW**    | Open the withdrawal interface                                                                                                                                     |
 | **TRANSFER**    | Open the money transfer interface                                                                                                                                 |
 | **KYC**         | Open the KYC interface                                                                                                                                            |
+| **PAYME**       | Reserved for the PayME wallet app                                                                                                                                 |
+| **PAYMENT**     | Open the payment interface for a transaction created by the partner                                                                                              |
+| **TRANSFER_QR** | Open the interface to transfer money from the PayME wallet to the destination account passed by the partner                                                     |
+| **GET_ACCOUNT_INFO** | Get the PayME account information                                                                                                                            |
 
 **PayMEError:** (Error during Miniapp operation)
+
 | **Attribute** | **Data Type** | **Explanation** |
 |-------------------|-----------------------------------------|-------------------------------------------------------------------------------|
 | **type** | enum "MiniApp", "UserCancel", "Network" | Error group: Miniapp error, user closes Miniapp or network connection error |  
@@ -349,11 +365,11 @@ Details of data types
 
 Partners use this function to open the PayME Miniapp interface after initialization
 
-```javascript
+```typescript
 import { open } from 'payme-mini-app'
 
 open(
-  openType: OpenMiniAppType = OpenMiniAppType.screen,
+  openType: "screen" | "modal",
   openMiniAppData: OpenMiniAppDataInterface
 )
 ```
@@ -369,24 +385,26 @@ Details of OpenMiniAppData:
 
 | **Attribute** | **Required** | **Data Type** | **Explanation**             |
 | ------------- | ------------ | ------------- | --------------------------- |
-| **phone**     | Yes          | String        | Phone number of the account |
+| **identityToken** | Yes      | String        | Identity string signed by PayME (see [identityToken](#identitytoken-from-native-sdk-080)) |
 
 Example:
 
 ```javascript
 open("screen", {
   action: "OPEN",
-  phone: "0123456789",
+  identityToken: "<identityToken>",
 });
 ```
 
 **PAY:** Partners use this action when they want to open the payment interface of the Miniapp
+
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|------------------|--------------------------------------------|
-| **phone** | Yes | String | Phone number of the account |
+| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
 | **data** | Yes | PaymentData | Additional information for payment |
 
 Details of PaymentData:
+
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
 | **transactionId** | Yes | String | Transaction ID |  
@@ -401,7 +419,7 @@ Example:
 ```javascript
 open("screen", {
   action: "PAY",
-  phone: "0123456789",
+  identityToken: "<identityToken>",
   data: {
     amount: 10000,
     note: "Thanh toán cho đơn hàng abc",
@@ -420,10 +438,11 @@ open("screen", {
 
 | **Attribute** | **Required** | **Data Type**     | **Explanation**                              |
 | ------------- | ------------ | ----------------- | -------------------------------------------- |
-| **phone**     | No           | String            | Phone number of the account                  |
+| **identityToken** | No       | String            | Identity string signed by PayME. With it the user can pay with the PayME wallet; without it the user pays as a guest |
 | **data**      | Yes          | PaymentDirectData | Additional information to facilitate payment |
 
 Details of PaymentDirectData:
+
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
 | **transaction** | Yes | String | Transaction code |
@@ -447,9 +466,11 @@ open("screen", {
 
 | **Attribute** | **Required** | **Data Type**  | **Explanation**                              |
 | ------------- | ------------ | -------------- | -------------------------------------------- |
+| **identityToken** | Yes      | String         | Identity string signed by PayME (see identityToken) |
 | **data**      | Yes          | TransferQRData | Additional information to facilitate payment |
 
-Details of PaymentDirectData:
+Details of TransferQRData:
+
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
 | **amount** | Yes | Int | Transaction amount (if no amount is provided, pass 0) |
@@ -459,13 +480,14 @@ Details of PaymentDirectData:
 | **partnerTransaction** | No | String | Partner's Transaction (from version 0.6.8 and above) |
 | **note** | No | String | Transaction note |
 | **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
-| **isShowResult** | No | Boolean | CShould PayME's result screen be displayed? (Default: true) |
+| **isShowResult** | No | Boolean | Should PayME's result screen be displayed? (Default: true) |
 
 Example:
 
 ```javascript
 open("screen", {
   action: "TRANSFER_QR",
+  identityToken: "<identityToken>",
   data: {
     amount: 20000,
     bankNumber: "9704000000000018",
@@ -477,17 +499,18 @@ open("screen", {
 ```
 
 **DEPOSIT:** Partners use this action when they want to open the interface to deposit money into the PayME wallet
+
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|--------------------------------------|----------------------------------|
-| **phone** | Yes | String | Phone number of the account |
-| **additionalData** | Yes | DepositWithdrawTransferData | Additional information for deposit |
+| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
+| **data** | Yes | DepositWithdrawTransferData | Additional information for deposit |
 
 Example:
 
 ```javascript
 open("screen", {
   action: "DEPOSIT",
-  phone: "0123456789",
+  identityToken: "<identityToken>",
   data: {
     amount: 10000,
   },
@@ -495,17 +518,18 @@ open("screen", {
 ```
 
 **WITHDRAW:** Partners use this action when they want to open the interface to withdraw money from the PayME wallet
+
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|--------------------------------------|----------------------------------|
-| **phone** | Yes | String | Phone number of the account |
-| **additionalData** | Yes | DepositWithdrawTransferData | Additional information for withdraw |
+| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
+| **data** | Yes | DepositWithdrawTransferData | Additional information for withdraw |
 
 Example:
 
 ```javascript
 open("screen", {
   action: "WITHDRAW",
-  phone: "0123456789",
+  identityToken: "<identityToken>",
   data: {
     amount: 10000,
   },
@@ -513,17 +537,18 @@ open("screen", {
 ```
 
 **TRANSFER:** Partners use this action when they want to open the money transfer interface
+
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|--------------------------------------|----------------------------------|
-| **phone** | Yes | String | Phone number of the account |
-| **additionalData** | Yes | DepositWithdrawTransferData | Additional information for transfer |
+| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
+| **data** | Yes | DepositWithdrawTransferData | Additional information for transfer |
 
 Example:
 
 ```javascript
 open("screen", {
   action: "TRANSFER",
-  phone: "0123456789",
+  identityToken: "<identityToken>",
   data: {
     amount: 10000,
   },
@@ -531,6 +556,7 @@ open("screen", {
 ```
 
 Details of DepositWithdrawTransferData:
+
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|------------------|-------------------------------------------------------|
 | **description** | No | String | Transaction description |  
@@ -539,29 +565,32 @@ Details of DepositWithdrawTransferData:
 | **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
 **KYC:** Partners use this action when they want to open the KYC interface
+
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------------|--------------|--------------------------------------|----------------------------------|
-| **phone** | Yes | String | Phone number of the account |
+| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
 
 Example:
 
 ```javascript
 open("screen", {
   action: "KYC",
-  phone: "0123456789",
+  identityToken: "<identityToken>",
 });
 ```
 
 **SERVICE:** Partners use this action when they want to open the service payment interface
+
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |--------------------|--------------|---------------|--------------------------------|
-| **phone** | Yes | String | Phone number of the account |
-| **additionalData** | Yes | ServiceData | Additional information for service |
+| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
+| **data** | Yes | ServiceData | Additional information for service |
 
 Details of ServiceData:
+
 | **Attribute** | **Required** | **Data Type** | **Explanation** |
 |---------------|--------------|---------------|-----------------|
-| **code** | No | String | Service code |
+| **service** | Yes | String | Service code (see the list below) |
 | **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
 | **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
 
@@ -583,9 +612,9 @@ Example:
 ```javascript
 open("screen", {
   action: "SERVICE",
-  phone: "0123456789",
+  identityToken: "<identityToken>",
   data: {
-    code: "POWE",
+    service: "POWE",
   },
 });
 ```
@@ -594,35 +623,35 @@ open("screen", {
 
 Partners use this function to retrieve the balance information of a PayME account. The result will be returned in the onResponse event with the action GET_BALANCE.
 
-```javascript
+```typescript
 import { getBalance } from 'payme-mini-app'
 
-getBalance(phone: string)
+getBalance(identityToken: string)
 ```
 
 | **Attribute** | **Required** | **Data Type** | **Explanation**                                                   |
 | ------------- | ------------ | ------------- | ----------------------------------------------------------------- |
-| **phone**     | Yes          | String        | The phone number of the account for which to retrieve the balance |
+| **identityToken** | Yes      | String        | Identity string signed by PayME for the account to look up (see identityToken) |
 
 ### Function getAccountInfo
 
 Partners use this function to retrieve information about a PayME account. The result will be returned in the onResponse event with the action GET_ACCOUNT_INFO.
 
-```javascript
+```typescript
 import { getAccountInfo } from 'payme-mini-app'
 
-getAccountInfo(phone: String)
+getAccountInfo(identityToken: String)
 ```
 
 | **Attribute** | **Required** | **Data Type** | **Explanation**                                                   |
 | ------------- | ------------ | ------------- | ----------------------------------------------------------------- |
-| **phone**     | Yes          | String        | The phone number of the account for which to retrieve the balance |
+| **identityToken** | Yes      | String        | Identity string signed by PayME for the account to look up (see identityToken) |
 
 ### Function setLanguage (from version 0.5.3 and above)
 
 Partners use this function to switch language.
 
-```javascript
+```typescript
 import { setLanguage } from 'payme-mini-app'
 
 setLanguage(language: String)
