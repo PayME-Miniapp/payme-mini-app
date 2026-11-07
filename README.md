@@ -1,671 +1,563 @@
-[![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/PayME-Miniapp/payme-mini-app/blob/main/README.en.md)
-[![vi](https://img.shields.io/badge/lang-vi-green.svg)](https://github.com/PayME-Miniapp/payme-mini-app/blob/main/README.md)
+**Tiếng Việt** | [English](README.en.md)
 
 # payme-mini-app
 
-- [Cài đặt](#cài-đặt)
-  - [Cài thư viện](#cài-thư-viện)
-  - [Android](#android)
-    - [Repository](#repository)
-    - [Yêu cầu build](#yêu-cầu-build)
-  - [iOS](#ios)
-  - [Thiết lập application tương thích với PayMEMiniApp](#thiết-lập-application-tương-thích-với-paymeminiapp)
-    - [Info.plist](#infoplist)
-    - [Thêm Capabilities](#thêm-capabilities)
-    - [Thiết lập cập nhật phiên bản PayMEMiniApp](#thiết-lập-cập-nhật-phiên-bản-paymeminiapp)
-- [Cách sử dụng](#cách-sử-dụng)
-  - [Khởi tạo PayMEMiniApp](#khởi-tạo-paymeminiapp)
-    - [Thiết lập bộ key từ PayME](#thiết-lập-bộ-key-từ-payme)
-    - [identityToken (từ SDK native 0.8.0)](#identitytoken-từ-sdk-native-080)
-    - [Khởi tạo Miniapp](#khởi-tạo-miniapp)
-    - [Set up các listeners](#set-up-các-listeners)
-    - [Hàm openMiniApp](#hàm-openminiapp)
-    - [Hàm getBalance](#hàm-getbalance)
-    - [Hàm getAccountInfo](#hàm-getaccountinfo)
-    - [Hàm setLanguage (từ phiên bản 0.5.3 trở về sau)](#hàm-setlanguage-từ-phiên-bản-053-trở-về-sau)
-    - [Hàm close (từ phiên bản 0.7.0 trở về sau)](#hàm-close-từ-phiên-bản-070-trở-về-sau)
+Thư viện React Native để tích hợp PayME Miniapp (ví điện tử, thanh toán, nạp, rút, chuyển tiền, eKYC) vào ứng dụng của đối tác trên iOS và Android.
 
-# Cài đặt
+| Gói | Phiên bản |
+| --- | --- |
+| npm `payme-mini-app` | **3.0.0** (không tương thích với 2.x) |
+| iOS pod `PayME-Miniapp` | 0.8.1 |
+| Android `com.github.PayME-Miniapp:native-android` | 0.8.2 (SDK 1.0.24) |
 
-## Cài thư viện
+Hai SDK native được khai báo sẵn trong thư viện, ứng dụng không cần thêm trực tiếp.
 
-npm:
+## Mục lục
 
-```javascript
-npm install payme-mini-app
+1. [Yêu cầu](#yêu-cầu)
+2. [Cài đặt](#cài-đặt)
+3. [Cấu hình ứng dụng](#cấu-hình-ứng-dụng)
+4. [Bắt đầu nhanh](#bắt-đầu-nhanh)
+5. [identityToken](#identitytoken)
+6. [Tham chiếu API](#tham-chiếu-api)
+7. [Mã lỗi](#mã-lỗi)
+8. [Nâng cấp từ 2.x](#nâng-cấp-từ-2x)
+9. [Lịch sử phiên bản và hỗ trợ](#lịch-sử-phiên-bản-và-hỗ-trợ)
+
+## Yêu cầu
+
+| Hạng mục | Yêu cầu |
+| --- | --- |
+| React Native | 0.71 trở lên. Ứng dụng mẫu được kiểm thử với React Native 0.85 |
+| Kiến trúc | Thư viện là native module dạng bridge (legacy module). Chạy được cả khi bật New Architecture nhờ lớp interop của React Native (ứng dụng mẫu bật New Architecture) |
+| iOS | iOS 13.0 trở lên (hoặc mức tối thiểu của phiên bản React Native bạn dùng, nếu cao hơn). **Xcode 26.2 trở lên** |
+| Android | `minSdkVersion` 26, `compileSdkVersion` 37 |
+| Bộ key | `appId`, `publicKey`, `privateKey` do PayME cấp cho từng ứng dụng |
+| Server đối tác | Gọi được API cấp `identityToken` của PayME (xem [identityToken](#identitytoken)) |
+
+## Cài đặt
+
+```sh
+npm install payme-mini-app@^3.0.0
+# hoặc
+yarn add payme-mini-app@^3.0.0
 ```
 
-yarn:
+### iOS
 
-```javascript
-yarn add payme-mini-app
+Thư viện kéo pod `PayME-Miniapp` 0.8.1. Thêm cấu hình sau vào `ios/Podfile` (giống ứng dụng mẫu):
+
+```ruby
+use_frameworks! :linkage => :static
+
+target 'YourApp' do
+  # ... use_react_native!(...) như mặc định
+
+  $dynamic_framework = [
+    'PayMEMiniApp', 'CryptoSwift', 'SwiftyRSA', 'GCDWebServer', 'NSLogger', 'lottie-ios',
+    'SwiftyJSON', 'ZIPFoundation', 'Mixpanel-swift', 'jsonlogic', 'json-enum', 'MixpanelSwiftCommon'
+  ]
+
+  pre_install do |installer|
+    installer.pod_targets.each do |pod|
+      if $dynamic_framework.include?(pod.name)
+        def pod.build_type
+          Pod::BuildType.dynamic_framework
+        end
+      end
+    end
+  end
+
+  post_install do |installer|
+    # react_native_post_install(...) như mặc định
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        if $dynamic_framework.include?(target.name)
+          config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+        end
+      end
+    end
+  end
+end
 ```
 
-## Android
+Sau đó chạy:
 
-### Repository
+```sh
+cd ios && pod install
+```
 
-Thêm JitPack và iProov Maven repository vào file `android/build.gradle` của app:
+### Android
 
-```kotlin
+**1. JitPack.** SDK Android được phát hành qua JitPack. React Native Gradle Plugin tự thêm `https://www.jitpack.io` cho mọi project, trừ khi bạn tắt bằng `includeJitpackRepository=false`. Nếu đã tắt, hoặc dự án khai báo repository trong `settings.gradle` với `RepositoriesMode.FAIL_ON_PROJECT_REPOS`, hãy thêm thủ công:
+
+```groovy
+// android/build.gradle
 allprojects {
   repositories {
-    ...
-    maven { url 'https://jitpack.io' }
-    maven { url 'https://raw.githubusercontent.com/iProov/android/master/maven/' }
+    maven { url 'https://www.jitpack.io' }
   }
 }
 ```
 
-### Yêu cầu build
+**2. Phiên bản SDK.** SDK Android yêu cầu `minSdkVersion` 26 và `compileSdkVersion` 37 (template React Native 0.85 mặc định là 24 và 36):
 
-`android/build.gradle`:
-
-```kotlin
+```groovy
+// android/build.gradle
 buildscript {
   ext {
     minSdkVersion = 26
     compileSdkVersion = 37
     targetSdkVersion = 36
-    kotlinVersion = "2.2.10"
-  }
-
-  dependencies {
-    classpath("com.android.tools.build:gradle:9.1.1")
   }
 }
 ```
 
-⚠️ Nếu ứng dụng có khai báo minifyEnabled = true. Bạn hãy thêm các rules này trong proguard-rules.pro như sau:
+Nếu Android Gradle Plugin của dự án báo chưa hỗ trợ `compileSdk` 37, hãy nâng AGP (ứng dụng mẫu dùng AGP 9.1.1).
 
-```
--keep class vn.kalapa.ekyc.**{*;}
--keep class com.fis.ekyc.**{*;}
--keep class com.fis.nfc.**{*;}
--keep class retrofit2.**{*;}
+**3. R8/ProGuard.** Nếu bản release bật `minifyEnabled true`, thêm vào `android/app/proguard-rules.pro`:
 
+```proguard
+-keep class vn.kalapa.ekyc.** { *; }
 -keepclassmembers,allowobfuscation class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
 ```
 
-## iOS
+## Cấu hình ứng dụng
 
-⚠️ Miniapp chỉ hỗ trợ iOS 13+.
+### iOS: Info.plist
 
-Thêm dòng này vào Podfile:
+| Key | Mục đích |
+| --- | --- |
+| `LSApplicationQueriesSchemes` | Mở ứng dụng ngân hàng khi nạp tiền qua deeplink |
+| `NSCameraUsageDescription` | Chụp giấy tờ, khuôn mặt khi eKYC; quét mã QR |
+| `NSPhotoLibraryUsageDescription` | Chọn ảnh mã QR từ thư viện |
+| `NSPhotoLibraryAddUsageDescription` | Lưu ảnh mã QR vào thư viện |
+| `NSContactsUsageDescription` | Chọn số điện thoại từ danh bạ (nạp tiền điện thoại) |
+| `NSFaceIDUsageDescription` | Xác thực bằng Face ID |
+| `NFCReaderUsageDescription` | Đọc chip CCCD qua NFC khi eKYC |
+| `com.apple.developer.nfc.readersession.iso7816.select-identifiers` | Mã ứng dụng ISO 7816 của chip CCCD |
+| `NSAppTransportSecurity` → `NSAllowsLocalNetworking` | Miniapp chạy trên web server cục bộ (`http://localhost`). Template React Native đã bật sẵn. Không cần `NSAllowsArbitraryLoads` |
 
-```ruby
-use_frameworks! :linkage => :static
-```
-
-Thêm vào target:
-
-```ruby
-$dynamic_framework = [
-  'PayMEMiniApp',
-  'CryptoSwift',
-  'SwiftyRSA',
-  'GCDWebServer',
-  'NSLogger',
-  'lottie-ios',
-  'SwiftyJSON',
-  'ZIPFoundation',
-  'Mixpanel-swift',
-  'jsonlogic',
-  'json-enum',
-  'MixpanelSwiftCommon'
-]
-
-post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    target.build_configurations.each do |config|
-      if $dynamic_framework.include?(target.name)
-        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-      end
-    end
-  end
-end
-
-pre_install do |installer|
-  installer.pod_targets.each do |pod|
-    if $dynamic_framework.include?(pod.name)
-      def pod.build_type;
-       Pod::BuildType.dynamic_framework
-      end
-    end
-  end
-end
-```
-
-Sau khi cập nhật Podfile, chạy lại `cd ios && pod install`.
-
-## Thiết lập application tương thích với PayMEMiniApp
-
-### Info.plist
-
-Cập nhật Info.plist những key như bên dưới để đảm bảo PayMEMiniApp có thể hoạt động
-
-⚠️ Từ version 0.9.0 cần thêm quyền NFCReaderUsageDescription để thực hiện việc KYC qua việc quét NFC
-
-```swift
-Queried URL Schemes
-Privacy - Camera Usage Description
-Privacy - Photo Library Usage Description
-Privacy - Photo Library Additions Usage Description
-Privacy - Contacts Usage Description
-Privacy - NFC Scan Usage Description
-ISO7816 application identifiers for NFC Tag Reader Session
-```
-
-Key:
-
-```swift
-LSApplicationQueriesSchemes
-NSCameraUsageDescription
-NSPhotoLibraryUsageDescription
-NSPhotoLibraryAddUsageDescription
-NSContactsUsageDescription
-NFCReaderUsageDescription
-com.apple.developer.nfc.readersession.iso7816.select-identifiers
-```
-
-Giải thích:
-
-```text
-- LSApplicationQueriesSchemes: Khai báo URL schemes cho việc nạp tiền qua deeplink của ngân hàng VCB
-- NSCameraUsageDescription: Quyền để chụp ảnh khi sử dụng tính năng KYC
-- NSPhotoLibraryUsageDescription: Quyền sử dụng hình ảnh trong thư viện khi sử dụng tính năng tải QR Code
-- NSPhotoLibraryAddUsageDescription: Quyền thêm hình ảnh vào trong thư viện khi sử dụng tính năng tải QR Code
-- NSContactsUsageDescription: Quyền truy cập danh bạ khi sử dụng tính năng nạp tiền điện thoại cho thuê bao trong danh bạ
-- NFCReaderUsageDescription: Quyền truy cập NFC của thiết bị khi sử dụng tính năng eKYC bằng NFC
-- com.apple.developer.nfc.readersession.iso7816.select-identifiers: Mã nhận dạng ứng dụng ISO7816 cho Phiên đọc thẻ NFC
-```
-
-Info.plist mẫu:
-
-```
+```xml
 <key>LSApplicationQueriesSchemes</key>
 <array>
   <string>vcbpartner</string>
   <string>bidv.smartbanking.partner</string>
 </array>
 <key>NSCameraUsageDescription</key>
-<string>Chúng tôi cần dùng máy ảnh để sử dụng cho việc định danh và đọc mã vạch thanh toán</string>
-<key>NSContactsUsageDescription</key>
-<string>Cho phép truy cập Danh bạ để chọn nhanh số điện thoại của bạn bè</string>
-<key>NSPhotoLibraryAddUsageDescription</key>
-<string>Chúng tôi cần sử dụng thư viện ảnh của bạn để hiển thị ảnh trong ứng dụng hoặc chọn mã vạch thanh toán</string>
+<string>Ứng dụng cần dùng máy ảnh để định danh và quét mã thanh toán</string>
 <key>NSPhotoLibraryUsageDescription</key>
-<string>Chúng tôi cần sử dụng thư viện ảnh của bạn để hiển thị ảnh trong ứng dụng hoặc chọn mã vạch thanh toán</string>
+<string>Ứng dụng cần truy cập thư viện ảnh để chọn mã thanh toán</string>
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>Ứng dụng cần lưu mã thanh toán vào thư viện ảnh</string>
+<key>NSContactsUsageDescription</key>
+<string>Cho phép truy cập danh bạ để chọn nhanh số điện thoại</string>
+<key>NSFaceIDUsageDescription</key>
+<string>Dùng Face ID để xác thực nhanh và an toàn</string>
 <key>NFCReaderUsageDescription</key>
-<string>eKYC cần sử dụng NFC</string>
+<string>Đọc chip căn cước công dân để định danh</string>
 <key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
 <array>
-    <string>A0000002471001</string>
-    <string>A0000002472001</string>
-    <string>00000000000000</string>
+  <string>A0000002471001</string>
+  <string>A0000002472001</string>
+  <string>00000000000000</string>
 </array>
+<key>NSAppTransportSecurity</key>
+<dict>
+  <key>NSAllowsArbitraryLoads</key>
+  <false/>
+  <key>NSAllowsLocalNetworking</key>
+  <true/>
+</dict>
 ```
 
-### Thêm Capabilities
+### iOS: Capabilities
 
-Ở XCode, chọn app của bạn ở mục Targets -> Signing & Capabilities -> Nhấn dấu "+" ở góc trên bên phải để mở cửa sổ thêm capability cho app
+Trong Xcode, chọn target ứng dụng → **Signing & Capabilities** → **+ Capability**.
 
-⚠️ Từ version 0.9.0 cần thêm capabilities Near Field Communication Tag Reading để hỗ trợ việc quét NFC
+1. Thêm **Near Field Communication Tag Reading** (để đọc chip CCCD khi eKYC).
 
-Tìm và chọn "Near Field Communication Tag Reading"
+   ![Near Field Communication Tag Reading](documents/capabilities2.png)
 
-![img_1.png](documents/capabilities2.png)
+2. Thêm **Background Modes** và bật **Background fetch** (cấu hình mẫu của PayME).
 
-Tìm và chọn "Background Modes", bật lựa chọn "Background Fetch"
+   ![Background Modes](documents/capabilities1.png)
 
-![img_2.png](documents/capabilities1.png)
+   ![Background fetch](documents/background_fetch.png)
 
-![img.png](documents/background_fetch.png)
+### Android: quyền
 
-### Thiết lập cập nhật phiên bản PayMEMiniApp
+Không cần khai báo thêm. Các quyền dưới đây nằm trong manifest của SDK và được Gradle tự gộp vào ứng dụng: `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CAMERA`, `READ_CONTACTS`, `NFC`, `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, `ACCESS_LOCAL_NETWORK`. Quyền runtime (máy ảnh, danh bạ) do Miniapp tự xin khi cần.
 
-Thêm dòng sau vào AppDelegate:
+## Bắt đầu nhanh
 
-- Objective-C:
+```tsx
+import { useEffect } from 'react';
+import { init, open, PayMEMiniAppEvents } from 'payme-mini-app';
 
-```objective-c
-- (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)(void))completionHandler { completionHandler(); }
-```
-
-- Swift:
-
-```swift
-import UIKit
-import PayMEMiniApp
-
-@main
-class AppDelegate: UIResponder, UIApplicationDelegate {
-...
-func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
-   completionHandler()
+export function usePayME() {
+  useEffect(() => {
+    // Gọi một lần, sau khi màn hình đầu tiên đã mount (Android cần Activity hiện tại).
+    init('<APP_ID>', '<PUBLIC_KEY>', '<PRIVATE_KEY>', 'vi', 'SANDBOX', 'miniapp_sandbox');
+    const subs = [
+      PayMEMiniAppEvents.addListener('onResponse', (e) => console.log('PayME response', e)),
+      PayMEMiniAppEvents.addListener('onError', (e) => console.log('PayME error', e)),
+    ];
+    return () => subs.forEach((s) => s.remove());
+  }, []);
 }
-...
+
+// identityToken do server của bạn lấy từ PayME, xem mục identityToken.
+export function openWallet(identityToken: string) {
+  open('modal', { action: 'OPEN', identityToken });
 }
 ```
 
-# Cách sử dụng
+> Không đưa key thật vào mã nguồn công khai, README hay ảnh chụp màn hình. `publicKey` và `privateKey` viết trên một dòng, bỏ ký tự xuống dòng (ví dụ `-----BEGIN PUBLIC KEY-----MFww...-----END PUBLIC KEY-----`).
 
-## Khởi tạo PayMEMiniApp
+## identityToken
 
-### Thiết lập bộ key từ PayME
+Từ 3.0.0, thư viện không nhận số điện thoại nữa. Mỗi lần mở Miniapp cho một người dùng, ứng dụng truyền `identityToken`: chuỗi do server PayME ký cho người dùng đó, gắn với `appId` của bạn.
 
-Bộ key bao gồm: appId, publicKey, privateKey. Liên hệ PayME để được hướng dẫn.
+**Luồng 3 bước**
 
-### identityToken (từ SDK native 0.8.0)
+1. Ứng dụng gọi server của bạn (đã xác thực người dùng).
+2. Server của bạn gọi API `identityToken/init` của PayME (server tới server) với số điện thoại của người dùng và nhận `identityToken`. Liên hệ PayME để nhận tài liệu API này. Không gọi API này từ ứng dụng.
+3. Ứng dụng truyền `identityToken` vào `open`, `getBalance` hoặc `getAccountInfo`.
 
-⚠️ Từ SDK native 0.8.0 (Android `native-android:0.8.0`, iOS `PayME-Miniapp 0.8.0`), Miniapp không còn nhận số điện thoại (`phone`). Đối tác truyền `identityToken` thay cho `phone`. Đây là thay đổi không tương thích với các phiên bản dùng SDK native 0.7.x.
+| Action / hàm | `identityToken` |
+| --- | --- |
+| `OPEN`, `KYC`, `PAY`, `TRANSFER_QR`, `SERVICE`, `DEPOSIT`, `WITHDRAW`, `TRANSFER`, `getBalance`, `getAccountInfo` | Bắt buộc |
+| `PAYMENT` | Tuỳ chọn. Có: người dùng trả được bằng ví PayME. Không có: thanh toán như khách vãng lai (thẻ, QR) |
+| `PAYME` | Không dùng. Người dùng tự nhập số điện thoại và đăng nhập bằng PIN |
 
-- Server của đối tác gọi API khởi tạo `identityToken` của PayME (server-to-server, ký RSA bằng key của đối tác) với số điện thoại của người dùng, rồi truyền chuỗi nhận được vào Miniapp. Liên hệ PayME để nhận tài liệu API này.
-- `identityToken` là chuỗi 64 ký tự hex, gắn với `appId` và số điện thoại đã khai báo. Chuỗi sống 15 phút và dùng lại được nhiều lần trong thời gian đó.
-- Khi `identityToken` sai hoặc hết hạn, Miniapp đóng và bắn event `onError` với `code` là `401`. Đối tác gọi lại API khởi tạo để lấy chuỗi mới rồi mở lại Miniapp.
-- Chỉ giữ `identityToken` trong bộ nhớ: không ghi log, không lưu vào bộ nhớ máy, không đưa lên URL.
-- Action **PAYMENT** không bắt buộc `identityToken`. Không truyền thì người dùng thanh toán như khách vãng lai (thẻ, QR).
+**Thời hạn**
 
-### Khởi tạo Miniapp
+- Chuỗi có hiệu lực 15 phút và dùng lại được nhiều lần trong thời gian đó.
+- Sai hoặc hết hạn: Miniapp đóng (nếu đang mở) và `onError` trả `code` = `"401"`. Lấy chuỗi mới từ server rồi gọi lại.
+- Chuỗi rỗng ở action/hàm bắt buộc: Miniapp không mở, `onError` trả `code` = `"IDENTITY_TOKEN_REQUIRED"`.
 
-<strong>_Việc khởi tạo này cũng sẽ bắt đầu việc kiểm tra và download phiên bản của PayMEMiniApp, do đó khuyến khích khởi tạo càng sớm càng tốt khi chạy app._</strong>
+**Bảo mật**
 
-| **Tham số**    | **Bắt buộc** | **Kiểu dữ liệu**                       |
-| -------------- | ------------ | -------------------------------------- |
-| **appId**      | Có           | String                                 |
-| **publicKey**  | Có           | String                                 |
-| **privateKey** | Có           | String                                 |
-| **locale**     | Không        | String (từ phiên bản 0.5.3 trở về sau) |
-| **env**        | Không        | String                                 |
-| **mode**       | Không        | String                                 |
+- Chỉ giữ `identityToken` trong bộ nhớ: không ghi log, không lưu (AsyncStorage, MMKV, Keychain, file), không đưa lên URL hay analytics.
+- Không đưa key ký hay thông tin gọi API `identityToken/init` vào ứng dụng.
 
-Chú thích:
+## Tham chiếu API
 
-- appId: mỗi đối tác tích hợp PayME Miniapp sẽ được cấp 1 appId riêng biệt (lưu ý: giá trị appId được lấy từ biến x-api-client trên dashboard)
-- publicKey, privateKey: cặp key được gen khi đăng ký đối tác với PayME
-- locale: Ngôn ngữ khởi tạo PayMEMiniApp (vi, en)
-- env: Môi trường khởi tạo PayMEMiniApp (PRODUCTION, SANDBOX)
-- mode: Chế độ sử dụng PayMEMiniApp (miniapp_sandbox, miniapp_product)
-
-```javascript
-import { init } from "payme-mini-app";
-
-init(appId, publicKey, privateKey, locale, env, mode);
+```ts
+import {
+  init, open, getBalance, getAccountInfo, setLanguage, close, PayMEMiniAppEvents,
+} from 'payme-mini-app';
 ```
 
-⚠️ Lưu ý: xóa "\n" và dấu xuống hàng ở cặp publicKey + privateKey. Xem đoạn mã ví dụ ở dưới để biết chi tiết
+Mọi hàm đều trả `void`. Kết quả và lỗi được trả bất đồng bộ qua [`PayMEMiniAppEvents`](#paymeminiappevents).
 
-Ví dụ:
+### init
 
-```javascript
-init(
-  "<APP_ID>", // appId
-  "-----BEGIN PUBLIC KEY-----<PUBLIC_KEY_BASE64>-----END PUBLIC KEY-----", // publicKey, viết trên một dòng
-  "-----BEGIN RSA PRIVATE KEY-----<PRIVATE_KEY_BASE64>-----END RSA PRIVATE KEY-----", // privateKey, viết trên một dòng
-  "vi", // locale, mặc định "vi"
-  "SANDBOX", // env, mặc định "PRODUCTION"
-  "miniapp_sandbox" // mode, mặc định "miniapp_product"
-);
+```ts
+declare function init(
+  appId: string,
+  publicKey: string,
+  privateKey: string,
+  locale?: 'vi' | 'en',                              // mặc định 'vi'
+  env?: 'PRODUCTION' | 'STAGING' | 'SANDBOX',        // mặc định 'PRODUCTION'
+  mode?: 'miniapp_sandbox' | 'miniapp_product',      // mặc định 'miniapp_product'
+): void;
 ```
 
-⚠️ Không đưa key thật vào README, source code public hay ảnh chụp màn hình. Dùng bộ key PayME cấp riêng cho ứng dụng của bạn.
+| Tham số | Bắt buộc | Mô tả |
+| --- | --- | --- |
+| `appId` | Có | Mã ứng dụng do PayME cấp (giá trị `x-api-client` trên dashboard) |
+| `publicKey` | Có | Public key của PayME, viết trên một dòng |
+| `privateKey` | Có | Private key của ứng dụng, viết trên một dòng |
+| `locale` | Không | Ngôn ngữ giao diện |
+| `env` | Không | Môi trường máy chủ PayME |
+| `mode` | Không | `miniapp_sandbox` khi dùng `SANDBOX`, `miniapp_product` khi dùng `PRODUCTION` |
 
-### Set up các listeners:
+Lưu ý:
 
-Sử dụng hàm này để thiết lập việc hứng các events onResponse hoặc onError được bắn ra trong quá trình thao tác với Miniapp
+- Gọi `init` một lần, càng sớm càng tốt (SDK kiểm tra và tải bản Miniapp mới khi khởi tạo), và **trước mọi hàm khác**. Trên iOS, gọi `open`, `getBalance`, `getAccountInfo`, `setLanguage` hoặc `close` trước `init` sẽ làm ứng dụng crash.
+- Android cần Activity hiện tại: gọi trong `useEffect` của component gốc, không gọi ở top-level module. Nếu chưa có Activity, các lệnh sau đó bị bỏ qua mà không báo lỗi.
+- Đăng ký listener trước khi gọi `open`, `getBalance` hoặc `getAccountInfo`.
 
-```javascript
-import { PayMEMiniAppEvents } from "payme-mini-app";
+### open
 
-PayMEMiniAppEvents.addListener("onResponse", listener);
-PayMEMiniAppEvents.addListener("onError", listener);
+```ts
+declare function open(type: 'screen' | 'modal', param: PayMEOpeningParam): void;
 ```
 
-| **Tham số**    | **Bắt buộc** | **Kiểu dữ liệu**                         |
-| -------------- | ------------ | ---------------------------------------- |
-| **onResponse** | Không        | (ActionOpenMiniApp, JSONObject?) -> Unit |
-| **onError**    | Không        | (ActionOpenMiniApp, PayMEError?) -> Unit |
+| Tham số | Mô tả |
+| --- | --- |
+| `type` | `screen`: toàn màn hình. `modal`: trượt từ dưới lên |
+| `param` | Object có `action`, `identityToken` (theo bảng ở [identityToken](#identitytoken)) và `data` (tuỳ action) |
 
-Chú thích:
+`PayMEOpeningParam` chưa được export từ gói. Nếu cần kiểu này, lấy qua `Parameters`:
 
-- onResponse: event onResponse được bắn khi kết thúc 1 action thao tác Miniapp (ví dụ: thanh toán thành công), event này được bắn kèm action tạo ra event này và 1 JSONObject chứa các dữ liệu thêm
-- onError: event onError được bắn khi có lỗi xảy ra trong quá trình thao tác với Miniapp, event này được bắn kèm action đang thao tác và 1 PayMEError chứa thông tin thêm về lỗi
+```ts
+import { open } from 'payme-mini-app';
 
-Chi tiết các kiểu dữ liệu
-
-**ActionOpenMiniApp:** (action thao tác Miniapp)
-
-| **Giá trị**     | **Giải thích**                                                                                                         |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **PAYME**       | Dùng riêng cho app ví PayME                                                                                            |
-| **OPEN**        | Nếu chưa kích hoạt tài khoản ví PayME thì mở giao diện kích hoạt, nếu đã kích hoạt thì mở giao diện trang chủ ví PayME |
-| **PAY**         | Mở giao diện thanh toán đơn hàng                                                                                       |
-| **GET_BALANCE** | Lấy số dư ví PayME                                                                                                     |
-| **SERVICE**     | Mở giao diện thanh toán dịch vụ                                                                                        |
-| **DEPOSIT**     | Mở giao diện nạp tiền                                                                                                  |
-| **WITHDRAW**    | Mở giao diện rút tiền                                                                                                  |
-| **TRANSFER**    | Mở giao diện chuyển tiền                                                                                               |
-| **KYC**         | Mở giao diện kyc                                                                                                       |
-| **PAYMENT**     | Mở giao diện thanh toán giao dịch do đối tác tạo sẵn                                                                    |
-| **TRANSFER_QR** | Mở giao diện chuyển tiền từ ví PayME đến tài khoản đích do đối tác truyền vào                                           |
-| **GET_ACCOUNT_INFO** | Lấy thông tin tài khoản PayME                                                                                     |
-
-**PayMEError:**(lỗi trong quá trình thao tác Miniapp)
-
-| **Thuộc tính** | **Kiểu dữ liệu** | **Giải thích** |
-|-------------------|-----------------------------------------|-------------------------------------------------------------------------------|
-| **type** | enum "MiniApp", "UserCancel", "Network" | Nhóm lỗi: lỗi trong Miniapp, người dùng đóng Miniapp hoặc lỗi do kết nối mạng |  
-| **code** | String | Mã lỗi |
-| **description** | String | Miêu tả lỗi |
-
-### Hàm openMiniApp:
-
-Đối tác dùng hàm này để mở giao diện PayME Miniapp sau khi đã khởi tạo
-
-```typescript
-import { open } from 'payme-mini-app'
-
-open(
-  openType: "screen" | "modal",
-  openMiniAppData: OpenMiniAppDataInterface
-)
+type PayMEOpeningParam = Parameters<typeof open>[1];
 ```
 
-| **Tham số**         | **Bắt buộc** | **Kiểu dữ liệu**         | **Giải thích**                                                       |
-| ------------------- | ------------ | ------------------------ | -------------------------------------------------------------------- |
-| **openType**        | Có           | enum "screen", "modal"   | Mở Miniapp theo giao diện toàn màn hình hoặc modal trượt từ dưới lên |
-| **openMiniAppData** | Có           | OpenMiniAppDataInterface | Thông tin thêm tùy vào loại action                                   |
+**Danh sách action**
 
-Chi tiết các OpenMiniAppData:
+| `action` | Chức năng | `identityToken` | `data` |
+| --- | --- | --- | --- |
+| `OPEN` | Mở trang chủ ví; nếu chưa kích hoạt ví thì mở luồng kích hoạt | Bắt buộc | Không có |
+| `KYC` | Mở luồng định danh (eKYC) | Bắt buộc | Không có |
+| `PAY` | Thanh toán đơn hàng của đối tác | Bắt buộc | [`PaymentParam`](#paymentparam-pay) |
+| `PAYMENT` | Thanh toán giao dịch đối tác đã tạo sẵn | Tuỳ chọn | [`PaymentDirectParam`](#paymentdirectparam-payment) |
+| `TRANSFER_QR` | Chuyển tiền từ ví PayME tới tài khoản ngân hàng do đối tác truyền | Bắt buộc | [`TransferQRParam`](#transferqrparam-transfer_qr) |
+| `SERVICE` | Thanh toán dịch vụ (điện, nước, thẻ…) | Bắt buộc | [`ServiceParam`](#serviceparam-service) |
+| `DEPOSIT` | Nạp tiền vào ví | Bắt buộc | [`PayParam`](#payparam-deposit-withdraw-transfer) |
+| `WITHDRAW` | Rút tiền khỏi ví | Bắt buộc | [`PayParam`](#payparam-deposit-withdraw-transfer) |
+| `TRANSFER` | Chuyển tiền | Bắt buộc | [`PayParam`](#payparam-deposit-withdraw-transfer) |
+| `PAYME` | Mở toàn bộ ví PayME, người dùng tự đăng nhập | Không dùng | Không có |
 
-#### **OPEN:** đối tác dùng action này khi muốn mở giao diện trang chủ ví PayME để sử dụng các dịch vụ tiện ích của PayME. Nếu chưa kích hoạt tài khoản ví PayME thì kích hoạt, nếu đã kích hoạt thì mở giao diện trang chủ ví PayME
+Số tiền (`amount`) là số nguyên, đơn vị VND. `extraData` có kiểu `Record<string, string | object>`: dữ liệu riêng của đối tác, được trả lại khi giao dịch thành công. `isShowResult` và `isBackToApp` mặc định `true` trên cả hai nền tảng.
 
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**              |
-| -------------- | ------------ | ---------------- | --------------------------- |
-| **identityToken** | Có        | String           | Chuỗi định danh do PayME ký (xem mục [identityToken](#identitytoken-từ-sdk-native-080)) |
+#### PaymentParam (PAY)
 
-Ví dụ:
+| Trường | Kiểu | Bắt buộc | Mô tả |
+| --- | --- | --- | --- |
+| `transactionId` | `string` | Có | Mã giao dịch của đối tác |
+| `amount` | `number` | Có | Số tiền |
+| `ipnUrl` | `string` | Có | URL nhận IPN khi giao dịch thay đổi trạng thái. Truyền `''` nếu không dùng |
+| `note` | `string` | Không | Ghi chú |
+| `extraData` | `Record<string, string \| object>` | Không | Dữ liệu riêng của đối tác |
+| `isShowResult` | `boolean` | Không | Hiện màn hình kết quả của PayME |
 
-```javascript
-open("screen", {
-  action: "OPEN",
-  identityToken: "<identityToken>",
+#### PaymentDirectParam (PAYMENT)
+
+Đối tác lấy danh sách phương thức và tạo giao dịch qua API của PayME (liên hệ PayME), rồi truyền mã giao dịch nhận được.
+
+| Trường | Kiểu | Bắt buộc | Mô tả |
+| --- | --- | --- | --- |
+| `transaction` | `string` | Có | Mã giao dịch PayME trả về khi tạo giao dịch |
+| `extraData` | `Record<string, string \| object>` | Không | Dữ liệu riêng của đối tác |
+| `isShowResult` | `boolean` | Không | Hiện màn hình kết quả của PayME |
+
+#### TransferQRParam (TRANSFER_QR)
+
+| Trường | Kiểu | Bắt buộc | Mô tả |
+| --- | --- | --- | --- |
+| `amount` | `number` | Có | Số tiền (truyền `0` nếu để người dùng nhập) |
+| `bankNumber` | `string` | Có | Số tài khoản hoặc số thẻ nhận |
+| `swiftCode` | `string` | Có | Mã SWIFT của ngân hàng nhận |
+| `cardHolder` | `string` | Có | Tên chủ tài khoản |
+| `note` | `string` | Không | Ghi chú |
+| `partnerTransaction` | `string` | Không | Mã giao dịch của đối tác |
+| `extraData` | `Record<string, string \| object>` | Không | Dữ liệu riêng của đối tác |
+| `isShowResult` | `boolean` | Không | Hiện màn hình kết quả của PayME |
+
+#### ServiceParam (SERVICE)
+
+| Trường | Kiểu | Bắt buộc | Mô tả |
+| --- | --- | --- | --- |
+| `service` | `string` | Có | Mã dịch vụ (bảng dưới) |
+| `extraData` | `Record<string, string \| object>` | Không | Dữ liệu riêng của đối tác |
+| `isBackToApp` | `boolean` | Không | Quay về ứng dụng đối tác sau khi hoàn tất |
+| `isShowResult` | `boolean` | Không | Hiện màn hình kết quả của PayME |
+
+| Mã dịch vụ | Dịch vụ |
+| --- | --- |
+| `POWE` | Điện |
+| `WATE` | Nước |
+| `ADSL` | Internet |
+| `TIVI` | Truyền hình |
+| `PPMB` | Điện thoại trả sau |
+| `MOBILE_CARD` | Thẻ điện thoại |
+| `MOBILE_TOPUP` | Nạp tiền điện thoại |
+| `GAME_CARD` | Thẻ game |
+
+#### PayParam (DEPOSIT, WITHDRAW, TRANSFER)
+
+| Trường | Kiểu | Bắt buộc | Mô tả |
+| --- | --- | --- | --- |
+| `amount` | `number` | Không | Số tiền điền sẵn |
+| `description` | `string` | Không | Mô tả giao dịch |
+| `extraData` | `Record<string, string \| object>` | Không | Dữ liệu riêng của đối tác |
+| `isBackToApp` | `boolean` | Không | Quay về ứng dụng đối tác sau khi hoàn tất |
+| `isShowResult` | `boolean` | Không | Hiện màn hình kết quả của PayME |
+
+`data` là bắt buộc với ba action này; truyền `{}` nếu không có trường nào.
+
+**Ví dụ**
+
+```ts
+import { open } from 'payme-mini-app';
+
+declare const identityToken: string; // lấy từ server của bạn
+
+open('screen', {
+  action: 'PAY',
+  identityToken,
+  data: { transactionId: 'ORDER_123', amount: 10000, ipnUrl: 'https://partner.example.com/ipn', note: 'Đơn hàng 123' },
 });
-```
 
-**PAY:** đối tác dùng action này khi muốn mở giao diện thanh toán của Miniapp
+open('modal', { action: 'PAYMENT', data: { transaction: '<TRANSACTION>' } }); // khách vãng lai
+open('modal', { action: 'PAYMENT', identityToken, data: { transaction: '<TRANSACTION>' } }); // cho phép trả bằng ví
 
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|------------------|--------------------------------------------|
-| **identityToken** | Có | String | Chuỗi định danh do PayME ký (xem mục identityToken) |
-| **data** | Có | PaymentData | Thông tin thêm để phục vụ việc thanh toán |
-
-Chi tiết PaymentData:
-
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
-| **transactionId** | Có | String | Mã giao dịch |  
-| **amount** | Có | Int | Tổng số tiền giao dịch |  
-| **note** | Không | String | Ghi chú của giao dịch |
-| **ipnUrl** | Không | String | Đường dẫn để server PayME ipn đến khi giao dịch có tiến triển (thành công/thất bại) |
-| **extraData** | Không | Object | Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công (từ version 0.6.6 trở về sau) |
-| **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
-
-Ví dụ:
-
-```javascript
-open("screen", {
-  action: "PAY",
-  identityToken: "<identityToken>",
-  data: {
-    amount: 10000,
-    note: "Thanh toán cho đơn hàng abc",
-    transactionId: "123",
-    ipnUrl: "www.google.com",
-  },
+open('modal', {
+  action: 'TRANSFER_QR',
+  identityToken,
+  data: { amount: 200000, bankNumber: '<BANK_NUMBER>', swiftCode: '<SWIFT_CODE>', cardHolder: 'NGUYEN VAN A' },
 });
+
+open('screen', { action: 'SERVICE', identityToken, data: { service: 'POWE' } });
+open('screen', { action: 'DEPOSIT', identityToken, data: { amount: 50000 } });
+open('screen', { action: 'KYC', identityToken });
+open('screen', { action: 'PAYME' });
 ```
 
-**PAYMENT:** đối tác dùng action này khi muốn mở giao diện thanh toán của Miniapp
+**Kiểm tra tham số**
 
-- Các bước lấy danh sách phương thức và tạo mã giao dịch sẽ được thực hiện ở ứng dụng của đối tác (Chi tiết xin liên hệ PayME)
-  - Dùng kết nối qua API để lấy về danh sách phương thức
-  - Sau đó chọn phương thức sẽ gọi API tạo giao dịch để lấy về transaction
+- iOS: thiếu trường bắt buộc trong `data` (hoặc sai kiểu, ví dụ `amount` không phải số nguyên) ở `PAY`, `PAYMENT`, `TRANSFER_QR`, `SERVICE`, hoặc `action` không hợp lệ: Miniapp không mở, `onError` trả `code` = `"INVALID_PARAM"`.
+- Android: thư viện không trả `INVALID_PARAM`; trường tuỳ chọn bị thiếu được điền mặc định (`note`, `ipnUrl`, `description` = `''`; `isShowResult`, `isBackToApp` = `true`). Hãy dựa vào kiểu TypeScript để luôn truyền đủ trường bắt buộc.
 
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu**  | **Giải thích**                            |
-| -------------- | ------------ | ----------------- | ----------------------------------------- |
-| **identityToken** | Không     | String            | Chuỗi định danh do PayME ký. Có thì trả được bằng ví PayME, không có thì thanh toán như khách vãng lai |
-| **data**       | Có           | PaymentDirectData | Thông tin thêm để phục vụ việc thanh toán |
+### getBalance
 
-Chi tiết PaymentDirectData:
+```ts
+declare function getBalance(identityToken: string): void;
+```
 
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
-| **transaction** | Có | String | Mã giao dịch |
-| **extraData** | Không | Object | Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công (từ version 0.6.6 trở về sau) |
-| **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
+Lấy số dư ví của người dùng. Kết quả trả qua `onResponse` với `action` = `"GET_BALANCE"`:
 
-Ví dụ:
+| Trường | Kiểu | Mô tả |
+| --- | --- | --- |
+| `linked` | `boolean` | Người dùng đã liên kết ví với ứng dụng hay chưa |
+| `balance` | `number` | Số dư (chỉ có khi `linked` = `true`) |
+| `message` | `string` | Thông điệp từ máy chủ |
 
-```javascript
-open("screen", {
-  action: "PAYMENT",
-  data: {
-    transaction: "123456",
-  },
+`identityToken` sai hoặc hết hạn: `onError` với `code` = `"401"`. Chuỗi rỗng: `"IDENTITY_TOKEN_REQUIRED"`.
+
+### getAccountInfo
+
+```ts
+declare function getAccountInfo(identityToken: string): void;
+```
+
+Lấy thông tin tài khoản ví. Kết quả trả qua `onResponse` với `action` = `"GET_ACCOUNT_INFO"`; các trường còn lại là object `accountInfo` do máy chủ PayME trả về (có `accountId`). Không tìm thấy tài khoản: `onError` (`code` = `"OTHER"` trên Android, `"SERVER"` trên iOS). Lỗi `identityToken` giống `getBalance`.
+
+### setLanguage
+
+```ts
+declare function setLanguage(language: string): void;
+```
+
+Đổi ngôn ngữ của Miniapp sau khi đã `init`. `'en'` là tiếng Anh; mọi giá trị khác được hiểu là `'vi'`.
+
+### close
+
+```ts
+declare function close(): void;
+```
+
+Đóng Miniapp đang mở.
+
+### PayMEMiniAppEvents
+
+`NativeEventEmitter` phát hai sự kiện. `addListener` trả về subscription; gọi `remove()` khi không dùng nữa.
+
+| Sự kiện | Payload | Khi nào |
+| --- | --- | --- |
+| `onResponse` | `{ action: string, ...dữ liệu }` | Một action hoàn tất (ví dụ thanh toán thành công), hoặc có kết quả `getBalance` / `getAccountInfo` |
+| `onError` | `{ action: string, code: string, description: string }` | Có lỗi hoặc người dùng đóng Miniapp |
+
+`action` là một trong: `PAYME`, `OPEN`, `KYC`, `PAY`, `PAYMENT`, `TRANSFER_QR`, `SERVICE`, `DEPOSIT`, `WITHDRAW`, `TRANSFER`, `GET_BALANCE`, `GET_ACCOUNT_INFO`.
+
+Khác biệt giữa hai nền tảng:
+
+| | iOS | Android |
+| --- | --- | --- |
+| `onResponse` | Payload gồm `action` và toàn bộ dữ liệu SDK trả về | Như iOS; không phát sự kiện khi SDK không có dữ liệu kèm theo |
+| `onError` | Có thêm `INVALID_PARAM` (do thư viện kiểm tra tham số) | Không có `INVALID_PARAM` |
+| Listener | Sự kiện phát khi chưa có listener sẽ bị bỏ | Sự kiện luôn được phát |
+
+Thư viện không export kiểu cho payload; tự khai báo trong ứng dụng:
+
+```ts
+import { PayMEMiniAppEvents } from 'payme-mini-app';
+
+type PayMEErrorEvent = { action: string; code: string; description: string };
+type PayMEResponseEvent = { action: string; [key: string]: unknown };
+
+const errorSub = PayMEMiniAppEvents.addListener('onError', (event) => {
+  const { action, code, description } = event as PayMEErrorEvent;
+  if (code === '401') {
+    // identityToken hết hạn: lấy chuỗi mới từ server rồi mở lại
+  }
+  console.warn(action, code, description);
 });
-```
 
-**TRANSFER_QR:** đối tác dùng action này khi muốn mở giao diện thanh toán của Miniapp (từ phiên bản 0.6.2 trở về sau)
-
-- Action này dùng để thực hiện việc chuyển tiền từ ví PayME đi đến tài khoản đích do đối tác truyền qua
-
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**                            |
-| -------------- | ------------ | ---------------- | ----------------------------------------- |
-| **identityToken** | Có        | String           | Chuỗi định danh do PayME ký (xem mục identityToken) |
-| **data**       | Có           | TransferQRData   | Thông tin thêm để phục vụ việc thanh toán |
-
-Chi tiết TransferQRData:
-
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
-| **amount** | Có | Int | Số tiền giao dịch (nếu không có số tiền thì truyền 0) |
-| **bankNumber** | Có | String | Số thẻ ngân hàng |
-| **swiftCode** | Có | String | Mã swiftCode của ngân hàng |
-| **cardHolder** | Có | String | Tên chủ thẻ |
-| **partnerTransaction** | Không | String | Mã giao dịch của đối tác (từ version 0.6.8 trở về sau) |
-| **note** | Không | String | Ghi chú của giao dịch |
-| **extraData** | Không | Object | Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công (từ version 0.6.6 trở về sau) |
-| **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
-
-Ví dụ:
-
-```javascript
-open("screen", {
-  action: "TRANSFER_QR",
-  identityToken: "<identityToken>",
-  data: {
-    amount: 20000,
-    bankNumber: "9704000000000018",
-    swiftCode: "SBITVNVX",
-    cardHolder: "Nguyen Van A",
-    note: "Test",
-  },
+const responseSub = PayMEMiniAppEvents.addListener('onResponse', (event) => {
+  const data = event as PayMEResponseEvent;
+  if (data.action === 'GET_BALANCE') {
+    console.log(data.linked, data.balance);
+  }
 });
+
+// Khi unmount:
+errorSub.remove();
+responseSub.remove();
 ```
 
-**DEPOSIT:** đối tác dùng action này khi muốn mở giao diện nạp tiền vào ví PayME
+## Mã lỗi
 
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|--------------------------------------|----------------------------------|
-| **identityToken** | Có | String | Chuỗi định danh do PayME ký (xem mục identityToken) |
-| **data** | Có | DepositWithdrawTransferData | Thông tin thêm của giao dịch |
+`onError` trả `code` dạng chuỗi.
 
-Ví dụ:
+| `code` | Nền tảng | Ý nghĩa | Cách xử lý |
+| --- | --- | --- | --- |
+| `401` | iOS, Android | `identityToken` sai hoặc hết hạn. Miniapp đóng nếu đang mở | Lấy `identityToken` mới từ server rồi gọi lại |
+| `IDENTITY_TOKEN_REQUIRED` | iOS, Android | Thiếu `identityToken` (chuỗi rỗng) ở action/hàm bắt buộc. Miniapp không mở | Lấy `identityToken` trước khi gọi |
+| `INVALID_PARAM` | iOS | `action` không hợp lệ, hoặc `data` thiếu trường bắt buộc / sai kiểu | Sửa tham số theo [bảng action](#open) |
+| `USER_CANCEL` | iOS, Android | Người dùng đóng Miniapp | Không phải lỗi; cập nhật giao diện nếu cần |
+| `SYSTEM_CANCEL` | iOS | Không khởi động được Miniapp trên thiết bị | Thử lại; nếu lặp lại, liên hệ PayME |
+| `CONNECTION_LOST` | iOS, Android | Mất kết nối mạng | Kiểm tra mạng rồi thử lại |
+| `TIMED_OUT` | iOS, Android | Hết thời gian chờ máy chủ | Thử lại |
+| `NO_RESPONSE` | iOS, Android | Máy chủ không phản hồi | Thử lại sau |
+| `ENCODE_FAILED` | iOS, Android | Mã hoá request thất bại | Kiểm tra `publicKey`, `privateKey`, `appId` và `env` |
+| `DECODE_FAILED` | iOS, Android | Giải mã response thất bại | Kiểm tra bộ key và `env` |
+| `SERVER` | iOS | Máy chủ trả lỗi (xem `description`) | Hiển thị `description` hoặc thử lại |
+| `SERVER_ERROR` | Android | Máy chủ trả lỗi | Thử lại sau |
+| `OTHER` | iOS, Android | Lỗi khác (ví dụ không tìm thấy tài khoản khi `getAccountInfo`) | Hiển thị `description` |
+| Mã khác | iOS, Android | Lỗi nghiệp vụ do Miniapp trả về | Hiển thị `description`; liên hệ PayME nếu cần tra mã |
 
-```javascript
-open("screen", {
-  action: "DEPOSIT",
-  identityToken: "<identityToken>",
-  data: {
-    amount: 10000,
-  },
-});
-```
+## Nâng cấp từ 2.x
 
-**WITHDRAW:** đối tác dùng action này khi muốn mở giao diện rút tiền ra ví PayME
+3.0.0 thay số điện thoại bằng `identityToken` và nâng SDK native từ 0.7.x lên 0.8.x. Không tương thích ngược.
 
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|--------------------------------------|----------------------------------|
-| **identityToken** | Có | String | Chuỗi định danh do PayME ký (xem mục identityToken) |
-| **data** | Có | DepositWithdrawTransferData | Thông tin thêm của giao dịch |
+| 2.x | 3.0.0 |
+| --- | --- |
+| `open(type, { action, phone, data })` | `open(type, { action, identityToken, data })` |
+| `open('screen', { action: 'PAYME', phone })` | `open('screen', { action: 'PAYME' })` |
+| `open(type, { action: 'PAYMENT', phone?, data })` | `open(type, { action: 'PAYMENT', identityToken?, data })` |
+| `getBalance(phone)` | `getBalance(identityToken)` |
+| `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
+| iOS `PayME-Miniapp` 0.7.6 | iOS `PayME-Miniapp` 0.8.1, Xcode 26.2 trở lên |
+| Android `native-android` 0.7.2 | Android `native-android` 0.8.2 (SDK 1.0.24) |
+| — | Thêm xử lý `onError` với `code` `"401"` và `"IDENTITY_TOKEN_REQUIRED"` |
 
-Ví dụ:
+Các bước:
 
-```javascript
-open("screen", {
-  action: "WITHDRAW",
-  identityToken: "<identityToken>",
-  data: {
-    amount: 10000,
-  },
-});
-```
+1. Server: tích hợp API `identityToken/init` của PayME (liên hệ PayME để nhận tài liệu và bật cho `appId`).
+2. Ứng dụng: `npm install payme-mini-app@^3.0.0`, rồi `cd ios && pod install`.
+3. Thay mọi `phone` bằng `identityToken`; bỏ `phone` ở action `PAYME`.
+4. Xử lý `401` (lấy chuỗi mới) và `IDENTITY_TOKEN_REQUIRED`.
+5. Build iOS bằng Xcode 26.2 trở lên.
 
-**TRANSFER:** đối tác dùng action này khi muốn mở giao diện chuyển tiền
+`init`, `setLanguage`, `close`, `PayMEMiniAppEvents` và cấu trúc `data` của từng action không đổi.
 
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|--------------------------------------|----------------------------------|
-| **identityToken** | Có | String | Chuỗi định danh do PayME ký (xem mục identityToken) |
-| **data** | Có | DepositWithdrawTransferData | Thông tin thêm của giao dịch |
+## Lịch sử phiên bản và hỗ trợ
 
-Ví dụ:
+| Phiên bản | Thay đổi chính |
+| --- | --- |
+| 3.0.0 | `identityToken` thay số điện thoại; iOS `PayME-Miniapp` 0.8.1, Android `native-android` 0.8.2 (SDK 1.0.24) |
+| 2.0.0 | iOS `PayME-Miniapp` 0.7.6, Android `native-android` 0.7.2; định danh bằng số điện thoại |
 
-```javascript
-open("screen", {
-  action: "TRANSFER",
-  identityToken: "<identityToken>",
-  data: {
-    amount: 10000,
-  },
-});
-```
+Danh sách phiên bản: [npm `payme-mini-app`](https://www.npmjs.com/package/payme-mini-app?activeTab=versions).
 
-Chi tiết DepositWithdrawTransferData:
-
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|------------------|-------------------------------------------------------|
-| **description** | Không | String | Miêu tả giao dịch |  
-| **amount** | Không | Int | Tổng số tiền giao dịch |
-| **extraData** | Không | Object | Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công (từ version 0.6.6 trở về sau) |
-| **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
-
-**KYC:** đối tác dùng action này khi muốn mở giao diện kyc
-
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|--------------------------------------|----------------------------------|
-| **identityToken** | Có | String | Chuỗi định danh do PayME ký (xem mục identityToken) |
-
-Ví dụ:
-
-```javascript
-open("screen", {
-  action: "KYC",
-  identityToken: "<identityToken>",
-});
-```
-
-**SERVICE:** đối tác dùng action này khi muốn mở giao diện thanh toán dịch vụ
-
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|--------------------------------------|----------------------------------|
-| **identityToken** | Có | String | Chuỗi định danh do PayME ký (xem mục identityToken) |
-| **data** | Có | ServiceData | Thông tin thêm để phục vụ thanh toán dịch vụ |
-
-Chi tiết ServiceData:
-
-| **Thuộc tính** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích** |
-|---------------------|--------------|------------------|-------------------------------------------------------|
-| **service** | Có | String | Mã dịch vụ (xem danh sách bên dưới) |
-| **extraData** | Không | Object | Dữ liệu bổ sung do đối tác quy định, dữ liệu này sẽ được trả về đối tác khi thanh toán thành công (từ version 0.6.6 trở về sau) |
-| **isShowResult** | Không | Boolean | Có hiển thị màn hình kết quả của PayME không? (Default: true) |
-
-Danh sách mã dịch vụ:
-
-| **Giá trị**      | **Giải thích**     |
-| ---------------- | ------------------ |
-| **POWE**         | Điện               |
-| **WATE**         | Nước               |
-| **ADSL**         | Internet           |
-| **TIVI**         | Truyền hình        |
-| **PPMB**         | Điện thoại trả sau |
-| **MOBILE_CARD**  | Thẻ điện thoại     |
-| **MOBILE_TOPUP** | Nạp điện thoại     |
-| **GAME_CARD**    | Thẻ game           |
-
-Ví dụ:
-
-```javascript
-open("screen", {
-  action: "SERVICE",
-  identityToken: "<identityToken>",
-  data: {
-    service: "POWE",
-  },
-});
-```
-
-### Hàm getBalance
-
-Đối tác dùng hàm này để lấy thông tin số dư ví PayME của tài khoản, kết quả sẽ được trả về ở event onResponse, action GET_BALANCE
-
-```typescript
-import { getBalance } from 'payme-mini-app'
-
-getBalance(identityToken: string)
-```
-
-| **Tham số** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**                                                      |
-| ----------- | ------------ | ---------------- | ------------------------------------------------------------------- |
-| **identityToken** | Có     | String           | Chuỗi định danh do PayME ký cho tài khoản cần lấy thông tin (xem mục identityToken) |
-
-### Hàm getAccountInfo
-
-Đối tác dùng hàm này để lấy thông tin tài khoản PayME, kết quả sẽ được trả về ở event onResponse, action GET_ACCOUNT_INFO
-
-```typescript
-import { getAccountInfo } from 'payme-mini-app'
-
-getAccountInfo(identityToken: String)
-```
-
-| **Tham số** | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**                                                      |
-| ----------- | ------------ | ---------------- | ------------------------------------------------------------------- |
-| **identityToken** | Có     | String           | Chuỗi định danh do PayME ký cho tài khoản cần lấy thông tin (xem mục identityToken) |
-
-### Hàm setLanguage (từ phiên bản 0.5.3 trở về sau)
-
-Đối tác dùng hàm này để lấy thay đổi ngôn ngữ
-
-```typescript
-import { setLanguage } from 'payme-mini-app'
-
-setLanguage(language: String)
-```
-
-| **Tham số**  | **Bắt buộc** | **Kiểu dữ liệu** | **Giải thích**            |
-| ------------ | ------------ | ---------------- | ------------------------- |
-| **language** | Có           | String           | Ngôn ngữ cần đổi (vi, en) |
-
-### Hàm close (từ phiên bản 0.7.0 trở về sau)
-
-Đối tác dùng hàm này để đóng miniapp
-
-```javascript
-import { close } from "payme-mini-app";
-
-close();
-```
+Hỗ trợ: PayME Technology Corporation, email [hotro@payme.vn](mailto:hotro@payme.vn), [payme.vn](https://payme.vn/web/home). Báo lỗi tài liệu: [GitHub Issues](https://github.com/PayME-Miniapp/payme-mini-app/issues). Bộ key, tài liệu API `identityToken/init` và API tạo giao dịch `PAYMENT`: liên hệ PayME.

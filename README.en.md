@@ -1,672 +1,563 @@
-[![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/PayME-Miniapp/payme-mini-app/blob/main/README.en.md)
-[![vi](https://img.shields.io/badge/lang-vi-green.svg)](https://github.com/PayME-Miniapp/payme-mini-app/blob/main/README.md)
+[Tiếng Việt](README.md) | **English**
 
 # payme-mini-app
 
-- [Installation](#installation)
-  - [Install Library](#install-library)
-  - [Android](#android)
-    - [Repositories](#repositories)
-    - [Build requirements](#build-requirements)
-  - [iOS](#ios)
-  - [Set up the application to be compatible with PayMEMiniApp](#set-up-the-application-to-be-compatible-with-paymeminiapp)
-    - [Info.plist](#infoplist)
-    - [Add Capabilities](#add-capabilities)
-    - [Set PayMEMiniApp Version Update](#set-paymeminiapp-version-update)
-- [Usage](#usage)
-  - [Initialize PayMEMiniApp](#initialize-paymeminiapp)
-    - [Set up the key set from PayME](#set-up-the-key-set-from-payme)
-    - [identityToken (from native SDK 0.8.0)](#identitytoken-from-native-sdk-080)
-    - [Initialize Miniapp](#initialize-miniapp)
-    - [Set up listeners](#set-up-listeners)
-    - [Function openMiniApp](#function-openminiapp)
-    - [Function getBalance](#function-getbalance)
-    - [Function getAccountInfo](#function-getaccountinfo)
-    - [Function setLanguage (from version 0.5.3 and above)](#function-setlanguage-from-version-053-and-above)
-    - [Function close (from version 0.7.0 and above)](#function-close-from-version-070-and-above)
+React Native library for embedding PayME Miniapp (e-wallet, payments, top-up, withdrawal, transfers, eKYC) in a partner app on iOS and Android.
 
-# Installation
+| Package | Version |
+| --- | --- |
+| npm `payme-mini-app` | **3.0.0** (breaking change from 2.x) |
+| iOS pod `PayME-Miniapp` | 0.8.1 |
+| Android `com.github.PayME-Miniapp:native-android` | 0.8.2 (SDK 1.0.24) |
 
-## Install Library
+Both native SDKs are declared by the library; your app does not add them directly.
 
-npm:
+## Table of contents
 
-```javascript
-npm install payme-mini-app
+1. [Requirements](#requirements)
+2. [Installation](#installation)
+3. [App configuration](#app-configuration)
+4. [Quick start](#quick-start)
+5. [identityToken](#identitytoken)
+6. [API reference](#api-reference)
+7. [Error codes](#error-codes)
+8. [Upgrading from 2.x](#upgrading-from-2x)
+9. [Version history and support](#version-history-and-support)
+
+## Requirements
+
+| Item | Requirement |
+| --- | --- |
+| React Native | 0.71 or later. The example app is tested with React Native 0.85 |
+| Architecture | The library is a bridge (legacy) native module. It also runs with the New Architecture enabled, through React Native's interop layer (the example app has it enabled) |
+| iOS | iOS 13.0 or later (or your React Native version's minimum, if higher). **Xcode 26.2 or later** |
+| Android | `minSdkVersion` 26, `compileSdkVersion` 37 |
+| Keys | `appId`, `publicKey`, `privateKey`, issued by PayME for each app |
+| Partner server | Able to call PayME's `identityToken` API (see [identityToken](#identitytoken)) |
+
+## Installation
+
+```sh
+npm install payme-mini-app@^3.0.0
+# or
+yarn add payme-mini-app@^3.0.0
 ```
 
-yarn:
+### iOS
 
-```javascript
-yarn add payme-mini-app
+The library pulls in the `PayME-Miniapp` 0.8.1 pod. Add the following to `ios/Podfile` (same as the example app):
+
+```ruby
+use_frameworks! :linkage => :static
+
+target 'YourApp' do
+  # ... use_react_native!(...) as generated
+
+  $dynamic_framework = [
+    'PayMEMiniApp', 'CryptoSwift', 'SwiftyRSA', 'GCDWebServer', 'NSLogger', 'lottie-ios',
+    'SwiftyJSON', 'ZIPFoundation', 'Mixpanel-swift', 'jsonlogic', 'json-enum', 'MixpanelSwiftCommon'
+  ]
+
+  pre_install do |installer|
+    installer.pod_targets.each do |pod|
+      if $dynamic_framework.include?(pod.name)
+        def pod.build_type
+          Pod::BuildType.dynamic_framework
+        end
+      end
+    end
+  end
+
+  post_install do |installer|
+    # react_native_post_install(...) as generated
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        if $dynamic_framework.include?(target.name)
+          config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+        end
+      end
+    end
+  end
+end
 ```
 
-## Android
+Then run:
 
-### Repositories
+```sh
+cd ios && pod install
+```
 
-Add the JitPack and iProov Maven repositories to the app's `android/build.gradle` file:
+### Android
 
-```kotlin
+**1. JitPack.** The Android SDK is published on JitPack. The React Native Gradle Plugin adds `https://www.jitpack.io` to every project unless you turn it off with `includeJitpackRepository=false`. If you turned it off, or your project declares repositories in `settings.gradle` with `RepositoriesMode.FAIL_ON_PROJECT_REPOS`, add it yourself:
+
+```groovy
+// android/build.gradle
 allprojects {
   repositories {
-    ...
-    maven { url 'https://jitpack.io' }
-    maven { url 'https://raw.githubusercontent.com/iProov/android/master/maven/' }
+    maven { url 'https://www.jitpack.io' }
   }
 }
 ```
 
-### Build requirements
+**2. SDK levels.** The Android SDK requires `minSdkVersion` 26 and `compileSdkVersion` 37 (the React Native 0.85 template defaults to 24 and 36):
 
-`android/build.gradle`:
-
-```kotlin
+```groovy
+// android/build.gradle
 buildscript {
   ext {
     minSdkVersion = 26
     compileSdkVersion = 37
     targetSdkVersion = 36
-    kotlinVersion = "2.2.10"
-  }
-
-  dependencies {
-    classpath("com.android.tools.build:gradle:9.1.1")
   }
 }
 ```
 
-⚠️ If your app declares `minifyEnabled = true`, add these rules to `proguard-rules.pro`:
+If your Android Gradle Plugin reports that `compileSdk` 37 is not supported, upgrade AGP (the example app uses AGP 9.1.1).
 
-```
--keep class vn.kalapa.ekyc.**{*;}
--keep class com.fis.ekyc.**{*;}
--keep class com.fis.nfc.**{*;}
--keep class retrofit2.**{*;}
+**3. R8/ProGuard.** If your release build sets `minifyEnabled true`, add to `android/app/proguard-rules.pro`:
 
+```proguard
+-keep class vn.kalapa.ekyc.** { *; }
 -keepclassmembers,allowobfuscation class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
 ```
 
-## iOS
+## App configuration
 
-⚠️ Miniapp supports iOS 13+.
+### iOS: Info.plist
 
-Add this line to Podfile:
+| Key | Purpose |
+| --- | --- |
+| `LSApplicationQueriesSchemes` | Open banking apps for top-up via deeplink |
+| `NSCameraUsageDescription` | Capture ID documents and face for eKYC; scan QR codes |
+| `NSPhotoLibraryUsageDescription` | Pick a QR code image from the library |
+| `NSPhotoLibraryAddUsageDescription` | Save a QR code image to the library |
+| `NSContactsUsageDescription` | Pick a phone number from contacts (mobile top-up) |
+| `NSFaceIDUsageDescription` | Authenticate with Face ID |
+| `NFCReaderUsageDescription` | Read the chip of the Vietnamese citizen ID card over NFC for eKYC |
+| `com.apple.developer.nfc.readersession.iso7816.select-identifiers` | ISO 7816 application IDs of the ID card chip |
+| `NSAppTransportSecurity` → `NSAllowsLocalNetworking` | The Miniapp runs on a local web server (`http://localhost`). The React Native template already enables it. `NSAllowsArbitraryLoads` is not needed |
 
-```ruby
-use_frameworks! :linkage => :static
-```
-
-Add to target:
-
-```ruby
-$dynamic_framework = [
-  'PayMEMiniApp',
-  'CryptoSwift',
-  'SwiftyRSA',
-  'GCDWebServer',
-  'NSLogger',
-  'lottie-ios',
-  'SwiftyJSON',
-  'ZIPFoundation',
-  'Mixpanel-swift',
-  'jsonlogic',
-  'json-enum',
-  'MixpanelSwiftCommon'
-]
-
-post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    target.build_configurations.each do |config|
-      if $dynamic_framework.include?(target.name)
-        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-      end
-    end
-  end
-end
-
-pre_install do |installer|
-  installer.pod_targets.each do |pod|
-    if $dynamic_framework.include?(pod.name)
-      def pod.build_type;
-       Pod::BuildType.dynamic_framework
-      end
-    end
-  end
-end
-```
-
-After updating the Podfile, run `cd ios && pod install`.
-
-## Set up the application to be compatible with PayMEMiniApp
-
-### Info.plist
-
-Update the Info.plist with the keys below to ensure PayMEMiniApp can function properly
-
-⚠️ From version 0.9.0, NFC permission is required to supports NFC scanning.
-
-```swift
-Queried URL Schemes
-Privacy - Camera Usage Description
-Privacy - Photo Library Usage Description
-Privacy - Photo Library Additions Usage Description
-Privacy - Contacts Usage Description
-Privacy - NFC Scan Usage Description
-ISO7816 application identifiers for NFC Tag Reader Session
-```
-
-Raw Keys version:
-
-```swift
-LSApplicationQueriesSchemes
-NSCameraUsageDescription
-NSPhotoLibraryUsageDescription
-NSPhotoLibraryAddUsageDescription
-NSContactsUsageDescription
-NFCReaderUsageDescription
-com.apple.developer.nfc.readersession.iso7816.select-identifiers
-```
-
-Explanation:
-
-```text
-- LSApplicationQueriesSchemes: Declare URL schemes for depositing money via deeplink of VCB bank
-- NSCameraUsageDescription: Permission to take photos when using the KYC feature.
-- NSPhotoLibraryUsageDescription: Permission to access photos in the library when using the QR Code download feature.
-- NSPhotoLibraryAddUsageDescription: Permission to access photos in the library when using the QR Code download feature.
-- NSContactsUsageDescription: Permission to access contacts when using the feature to top up phone credit for subscribers in the contacts list.
-- NFCReaderUsageDescription: Permission to access the device's NFC when using the eKYC feature via NFC
-- com.apple.developer.nfc.readersession.iso7816.select-identifiers: ISO7816 application identifiers for NFC Tag Reader Session
-```
-
-Example Info.plist:
-
-```
+```xml
 <key>LSApplicationQueriesSchemes</key>
 <array>
   <string>vcbpartner</string>
   <string>bidv.smartbanking.partner</string>
 </array>
 <key>NSCameraUsageDescription</key>
-<string>Chúng tôi cần dùng máy ảnh để sử dụng cho việc định danh và đọc mã vạch thanh toán</string>
-<key>NSContactsUsageDescription</key>
-<string>Cho phép truy cập Danh bạ để chọn nhanh số điện thoại của bạn bè</string>
-<key>NSPhotoLibraryAddUsageDescription</key>
-<string>Chúng tôi cần sử dụng thư viện ảnh của bạn để hiển thị ảnh trong ứng dụng hoặc chọn mã vạch thanh toán</string>
+<string>The camera is used for identity verification and scanning payment codes</string>
 <key>NSPhotoLibraryUsageDescription</key>
-<string>Chúng tôi cần sử dụng thư viện ảnh của bạn để hiển thị ảnh trong ứng dụng hoặc chọn mã vạch thanh toán</string>
+<string>Photo library access is used to pick payment codes</string>
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>Photo library access is used to save payment codes</string>
+<key>NSContactsUsageDescription</key>
+<string>Contacts access lets you pick a phone number quickly</string>
+<key>NSFaceIDUsageDescription</key>
+<string>Face ID is used for fast and secure authentication</string>
 <key>NFCReaderUsageDescription</key>
-<string>eKYC cần sử dụng NFC</string>
+<string>NFC is used to read your ID card chip for identity verification</string>
 <key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
 <array>
-    <string>A0000002471001</string>
-    <string>A0000002472001</string>
-    <string>00000000000000</string>
+  <string>A0000002471001</string>
+  <string>A0000002472001</string>
+  <string>00000000000000</string>
 </array>
+<key>NSAppTransportSecurity</key>
+<dict>
+  <key>NSAllowsArbitraryLoads</key>
+  <false/>
+  <key>NSAllowsLocalNetworking</key>
+  <true/>
+</dict>
 ```
 
-### Add Capabilities
+### iOS: Capabilities
 
-In XCode, select your app in Targets -> Signing & Capabilities -> Click on the "+" in the upper right corner to open the window to add capability for the app
+In Xcode, select your app target → **Signing & Capabilities** → **+ Capability**.
 
-⚠️ From version 0.9.0, add the Near Field Communication Tag Reading capability to support NFC scanning.
+1. Add **Near Field Communication Tag Reading** (to read the ID card chip during eKYC).
 
-Find and select "Near Field Communication Tag Reading".
+   ![Near Field Communication Tag Reading](documents/capabilities2.png)
 
-![img_1.png](documents/capabilities2.png)
+2. Add **Background Modes** and enable **Background fetch** (PayME's reference configuration).
 
-Find and select "Background Modes", turn on the option "Background Fetch"
+   ![Background Modes](documents/capabilities1.png)
 
-![img_1.png](documents/capabilities1.png)
+   ![Background fetch](documents/background_fetch.png)
 
-![img.png](documents/background_fetch.png)
+### Android: permissions
 
-### Set PayMEMiniApp Version Update
+Nothing to declare. The SDK manifest contains the permissions below and Gradle merges them into your app: `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CAMERA`, `READ_CONTACTS`, `NFC`, `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, `ACCESS_LOCAL_NETWORK`. The Miniapp requests runtime permissions (camera, contacts) when it needs them.
 
-Add the following line to AppDelegate:
+## Quick start
 
-- Objective-C:
+```tsx
+import { useEffect } from 'react';
+import { init, open, PayMEMiniAppEvents } from 'payme-mini-app';
 
-```objective-c
-- (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)(void))completionHandler { completionHandler(); }
-```
-
-- Swift:
-
-```swift
-import UIKit
-import PayMEMiniApp
-
-@main
-class AppDelegate: UIResponder, UIApplicationDelegate {
-...
-func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
-   completionHandler()
+export function usePayME() {
+  useEffect(() => {
+    // Call once, after the first screen has mounted (Android needs the current Activity).
+    init('<APP_ID>', '<PUBLIC_KEY>', '<PRIVATE_KEY>', 'vi', 'SANDBOX', 'miniapp_sandbox');
+    const subs = [
+      PayMEMiniAppEvents.addListener('onResponse', (e) => console.log('PayME response', e)),
+      PayMEMiniAppEvents.addListener('onError', (e) => console.log('PayME error', e)),
+    ];
+    return () => subs.forEach((s) => s.remove());
+  }, []);
 }
-...
+
+// identityToken comes from your server, which gets it from PayME. See identityToken.
+export function openWallet(identityToken: string) {
+  open('modal', { action: 'OPEN', identityToken });
 }
 ```
 
-# Usage
+> Never put real keys in public source code, READMEs or screenshots. Write `publicKey` and `privateKey` on a single line without line breaks (for example `-----BEGIN PUBLIC KEY-----MFww...-----END PUBLIC KEY-----`).
 
-## Initialize PayMEMiniApp
+## identityToken
 
-### Set up the key set from PayME
+Since 3.0.0 the library no longer accepts a phone number. Each time you open the Miniapp for a user, the app passes an `identityToken`: a string signed by the PayME server for that user and bound to your `appId`.
 
-The key set includes: appId, publicKey, privateKey. Contact PayME for guidance.
+**Three-step flow**
 
-### identityToken (from native SDK 0.8.0)
+1. Your app calls your server (with the user already authenticated).
+2. Your server calls PayME's `identityToken/init` API (server to server) with the user's phone number and receives an `identityToken`. Contact PayME for the API documentation. Never call this API from the app.
+3. Your app passes the `identityToken` to `open`, `getBalance` or `getAccountInfo`.
 
-⚠️ From native SDK 0.8.0 (Android `native-android:0.8.0`, iOS `PayME-Miniapp 0.8.0`), the Miniapp no longer accepts a phone number (`phone`). Partners pass an `identityToken` instead of `phone`. This change is not compatible with versions that use native SDK 0.7.x.
+| Action / function | `identityToken` |
+| --- | --- |
+| `OPEN`, `KYC`, `PAY`, `TRANSFER_QR`, `SERVICE`, `DEPOSIT`, `WITHDRAW`, `TRANSFER`, `getBalance`, `getAccountInfo` | Required |
+| `PAYMENT` | Optional. With it, the user can pay from the PayME wallet. Without it, the user pays as a guest (card, QR) |
+| `PAYME` | Not used. The user enters a phone number and signs in with a PIN |
 
-- The partner's server calls PayME's `identityToken` initialization API (server-to-server, RSA-signed with the partner's key) with the user's phone number, then passes the returned string to the Miniapp. Contact PayME for this API's documentation.
-- `identityToken` is a 64-character hex string bound to the `appId` and the declared phone number. It is valid for 15 minutes and can be reused within that time.
-- When the `identityToken` is invalid or expired, the Miniapp closes and fires the `onError` event with `code` `401`. The partner calls the initialization API again to get a new string, then reopens the Miniapp.
-- Keep `identityToken` in memory only: do not log it, store it on the device, or put it in a URL.
-- The **PAYMENT** action does not require an `identityToken`. Without it, the user pays as a guest (card, QR).
+**Lifetime**
 
-### Initialize Miniapp
+- A token is valid for 15 minutes and can be reused any number of times within that window.
+- Invalid or expired: the Miniapp closes (if open) and `onError` reports `code` `"401"`. Get a new token from your server and try again.
+- Empty string for a required action/function: the Miniapp does not open and `onError` reports `code` `"IDENTITY_TOKEN_REQUIRED"`.
 
-<strong>_Initializing this will also start checking and downloading the PayMEMiniApp version, so it is recommended to initialize it as early as possible when running the app._</strong>
+**Security**
 
-| **Parameter**  | **Required** | **Data Type**                         |
-| -------------- | ------------ | ------------------------------------- |
-| **appId**      | Yes          | String                                |
-| **publicKey**  | Yes          | String                                |
-| **privateKey** | Yes          | String                                |
-| **locale**     | No           | String (from version 0.5.3 and above) |
-| **env**        | No           | String                                |
-| **mode**       | No           | String                                |
+- Keep the `identityToken` in memory only: do not log it, persist it (AsyncStorage, MMKV, Keychain, files) or put it in URLs or analytics.
+- Never ship signing keys or `identityToken/init` credentials in the app.
 
-Note:
+## API reference
 
-- appId: Each partner integrating PayME Miniapp will be provided with a unique appId. (Note: The value of the appId is taken from the x-api-client field on the dashboard)
-- publicKey, privateKey: a key pair generated when registering as a partner with PayME.
-- locale: Initialization language for PayMEMiniApp (vi, en).
-- env: Initialization environment for PayMEMiniApp (PRODUCTION, SANDBOX).
-- mode: PayMEMiniApp usage mode (miniapp_sandbox, miniapp_product).
-
-```javascript
-import { init } from "payme-mini-app";
-
-init(appId, publicKey, privateKey, locale, env, mode);
+```ts
+import {
+  init, open, getBalance, getAccountInfo, setLanguage, close, PayMEMiniAppEvents,
+} from 'payme-mini-app';
 ```
 
-⚠️ Note: delete "\n" and newline in the publicKey + privateKey pair. See the example code below for details
+Every function returns `void`. Results and errors arrive asynchronously through [`PayMEMiniAppEvents`](#paymeminiappevents).
 
-Example:
+### init
 
-```javascript
-init(
-  "<APP_ID>", // appId
-  "-----BEGIN PUBLIC KEY-----<PUBLIC_KEY_BASE64>-----END PUBLIC KEY-----", // publicKey, on a single line
-  "-----BEGIN RSA PRIVATE KEY-----<PRIVATE_KEY_BASE64>-----END RSA PRIVATE KEY-----", // privateKey, on a single line
-  "vi", // locale, default "vi"
-  "SANDBOX", // env, default "PRODUCTION"
-  "miniapp_sandbox" // mode, default "miniapp_product"
-);
+```ts
+declare function init(
+  appId: string,
+  publicKey: string,
+  privateKey: string,
+  locale?: 'vi' | 'en',                              // default 'vi'
+  env?: 'PRODUCTION' | 'STAGING' | 'SANDBOX',        // default 'PRODUCTION'
+  mode?: 'miniapp_sandbox' | 'miniapp_product',      // default 'miniapp_product'
+): void;
 ```
 
-⚠️ Do not put real keys in the README, public source code or screenshots. Use the key set PayME issues for your app.
+| Parameter | Required | Description |
+| --- | --- | --- |
+| `appId` | Yes | App ID issued by PayME (the `x-api-client` value on the dashboard) |
+| `publicKey` | Yes | PayME public key, on a single line |
+| `privateKey` | Yes | Your app's private key, on a single line |
+| `locale` | No | UI language |
+| `env` | No | PayME server environment |
+| `mode` | No | `miniapp_sandbox` with `SANDBOX`, `miniapp_product` with `PRODUCTION` |
 
-### Set up listeners:
+Notes:
 
-Use this function to set up listeners for onResponse or onError events thrown during Miniapp operations
+- Call `init` once, as early as possible (the SDK checks for and downloads Miniapp updates at initialization), and **before any other function**. On iOS, calling `open`, `getBalance`, `getAccountInfo`, `setLanguage` or `close` before `init` crashes the app.
+- Android needs the current Activity: call it in a `useEffect` of your root component, not at module top level. If there is no Activity yet, later calls are silently ignored.
+- Register listeners before calling `open`, `getBalance` or `getAccountInfo`.
 
-```javascript
-import { PayMEMiniAppEvents } from "payme-mini-app";
+### open
 
-PayMEMiniAppEvents.addListener("onResponse", listener);
-PayMEMiniAppEvents.addListener("onError", listener);
+```ts
+declare function open(type: 'screen' | 'modal', param: PayMEOpeningParam): void;
 ```
 
-| **Parameter**  | **Required** | **Data Type**                            |
-| -------------- | ------------ | ---------------------------------------- |
-| **onResponse** | No           | (ActionOpenMiniApp, JSONObject?) -> Unit |
-| **onError**    | No           | (ActionOpenMiniApp, PayMEError?) -> Unit |
+| Parameter | Description |
+| --- | --- |
+| `type` | `screen`: full screen. `modal`: slides up from the bottom |
+| `param` | Object with `action`, `identityToken` (see the table in [identityToken](#identitytoken)) and `data` (depends on the action) |
 
-Note:
+`PayMEOpeningParam` is not exported by the package. If you need the type, derive it with `Parameters`:
 
-- onResponse: The onResponse event is triggered when a Miniapp action is completed (e.g., successful payment). This event is triggered with the action that caused the event and a JSONObject containing additional data.
-- onError: The onError event is triggered when an error occurs during Miniapp operation. This event is triggered with the action being performed and a PayMEError containing additional information about the error.
+```ts
+import { open } from 'payme-mini-app';
 
-Details of data types
-
-**ActionOpenMiniApp:** (Miniapp action)
-
-| **Value**       | **Explanation**                                                                                                                                                   |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **OPEN**        | If the PayME wallet account has not been activated, open the activation interface; if it has already been activated, open the home interface of the PayME wallet. |
-| **PAY**         | Open the payment interface for an order                                                                                                                           |
-| **GET_BALANCE** | Get the PayME wallet balance                                                                                                                                      |
-| **SERVICE**     | Open the service payment interface                                                                                                                                |
-| **DEPOSIT**     | Open the deposit interface                                                                                                                                        |
-| **WITHDRAW**    | Open the withdrawal interface                                                                                                                                     |
-| **TRANSFER**    | Open the money transfer interface                                                                                                                                 |
-| **KYC**         | Open the KYC interface                                                                                                                                            |
-| **PAYME**       | Reserved for the PayME wallet app                                                                                                                                 |
-| **PAYMENT**     | Open the payment interface for a transaction created by the partner                                                                                              |
-| **TRANSFER_QR** | Open the interface to transfer money from the PayME wallet to the destination account passed by the partner                                                     |
-| **GET_ACCOUNT_INFO** | Get the PayME account information                                                                                                                            |
-
-**PayMEError:** (Error during Miniapp operation)
-
-| **Attribute** | **Data Type** | **Explanation** |
-|-------------------|-----------------------------------------|-------------------------------------------------------------------------------|
-| **type** | enum "MiniApp", "UserCancel", "Network" | Error group: Miniapp error, user closes Miniapp or network connection error |  
-| **code** | String | Error code |
-| **description** | String | Error description |
-
-### Function openMiniApp:
-
-Partners use this function to open the PayME Miniapp interface after initialization
-
-```typescript
-import { open } from 'payme-mini-app'
-
-open(
-  openType: "screen" | "modal",
-  openMiniAppData: OpenMiniAppDataInterface
-)
+type PayMEOpeningParam = Parameters<typeof open>[1];
 ```
 
-| **Parameter**       | **Required** | **Data Type**            | **Explanation**                                                               |
-| ------------------- | ------------ | ------------------------ | ----------------------------------------------------------------------------- |
-| **openType**        | Yes          | enum "screen", "modal"   | Open the Miniapp in full-screen or modal interface sliding from the bottom up |
-| **openMiniAppData** | Yes          | OpenMiniAppDataInterface | Additional information depending on the type of action                        |
+**Actions**
 
-Details of OpenMiniAppData:
+| `action` | Purpose | `identityToken` | `data` |
+| --- | --- | --- | --- |
+| `OPEN` | Open the wallet home; starts activation if the wallet is not activated yet | Required | None |
+| `KYC` | Open identity verification (eKYC) | Required | None |
+| `PAY` | Pay a partner order | Required | [`PaymentParam`](#paymentparam-pay) |
+| `PAYMENT` | Pay a transaction the partner has already created | Optional | [`PaymentDirectParam`](#paymentdirectparam-payment) |
+| `TRANSFER_QR` | Transfer from the PayME wallet to a bank account given by the partner | Required | [`TransferQRParam`](#transferqrparam-transfer_qr) |
+| `SERVICE` | Pay a bill or service (electricity, water, cards…) | Required | [`ServiceParam`](#serviceparam-service) |
+| `DEPOSIT` | Top up the wallet | Required | [`PayParam`](#payparam-deposit-withdraw-transfer) |
+| `WITHDRAW` | Withdraw from the wallet | Required | [`PayParam`](#payparam-deposit-withdraw-transfer) |
+| `TRANSFER` | Transfer money | Required | [`PayParam`](#payparam-deposit-withdraw-transfer) |
+| `PAYME` | Open the full PayME wallet; the user signs in | Not used | None |
 
-**OPEN:** Partners use this action when they want to open the PayME wallet home page to use PayME's utility services. If the PayME account is not activated, activate it; if already activated, open the PayME wallet home page
+`amount` is an integer in VND. `extraData` is a `Record<string, string | object>`: partner data returned to you when the transaction succeeds. `isShowResult` and `isBackToApp` default to `true` on both platforms.
 
-| **Attribute** | **Required** | **Data Type** | **Explanation**             |
-| ------------- | ------------ | ------------- | --------------------------- |
-| **identityToken** | Yes      | String        | Identity string signed by PayME (see [identityToken](#identitytoken-from-native-sdk-080)) |
+#### PaymentParam (PAY)
 
-Example:
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `transactionId` | `string` | Yes | Partner transaction ID |
+| `amount` | `number` | Yes | Amount |
+| `ipnUrl` | `string` | Yes | URL that receives IPN callbacks when the transaction changes state. Pass `''` if unused |
+| `note` | `string` | No | Note |
+| `extraData` | `Record<string, string \| object>` | No | Partner data |
+| `isShowResult` | `boolean` | No | Show PayME's result screen |
 
-```javascript
-open("screen", {
-  action: "OPEN",
-  identityToken: "<identityToken>",
+#### PaymentDirectParam (PAYMENT)
+
+The partner fetches the payment methods and creates the transaction through PayME's API (contact PayME), then passes the transaction code it received.
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `transaction` | `string` | Yes | Transaction code returned by PayME when the transaction was created |
+| `extraData` | `Record<string, string \| object>` | No | Partner data |
+| `isShowResult` | `boolean` | No | Show PayME's result screen |
+
+#### TransferQRParam (TRANSFER_QR)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `amount` | `number` | Yes | Amount (pass `0` to let the user enter it) |
+| `bankNumber` | `string` | Yes | Destination account or card number |
+| `swiftCode` | `string` | Yes | SWIFT code of the destination bank |
+| `cardHolder` | `string` | Yes | Account holder name |
+| `note` | `string` | No | Note |
+| `partnerTransaction` | `string` | No | Partner transaction ID |
+| `extraData` | `Record<string, string \| object>` | No | Partner data |
+| `isShowResult` | `boolean` | No | Show PayME's result screen |
+
+#### ServiceParam (SERVICE)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `service` | `string` | Yes | Service code (table below) |
+| `extraData` | `Record<string, string \| object>` | No | Partner data |
+| `isBackToApp` | `boolean` | No | Return to the partner app when done |
+| `isShowResult` | `boolean` | No | Show PayME's result screen |
+
+| Service code | Service |
+| --- | --- |
+| `POWE` | Electricity |
+| `WATE` | Water |
+| `ADSL` | Internet |
+| `TIVI` | Television |
+| `PPMB` | Postpaid mobile |
+| `MOBILE_CARD` | Mobile scratch card |
+| `MOBILE_TOPUP` | Mobile top-up |
+| `GAME_CARD` | Game card |
+
+#### PayParam (DEPOSIT, WITHDRAW, TRANSFER)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `amount` | `number` | No | Prefilled amount |
+| `description` | `string` | No | Transaction description |
+| `extraData` | `Record<string, string \| object>` | No | Partner data |
+| `isBackToApp` | `boolean` | No | Return to the partner app when done |
+| `isShowResult` | `boolean` | No | Show PayME's result screen |
+
+`data` is required for these three actions; pass `{}` if you have no fields to set.
+
+**Examples**
+
+```ts
+import { open } from 'payme-mini-app';
+
+declare const identityToken: string; // from your server
+
+open('screen', {
+  action: 'PAY',
+  identityToken,
+  data: { transactionId: 'ORDER_123', amount: 10000, ipnUrl: 'https://partner.example.com/ipn', note: 'Order 123' },
 });
-```
 
-**PAY:** Partners use this action when they want to open the payment interface of the Miniapp
+open('modal', { action: 'PAYMENT', data: { transaction: '<TRANSACTION>' } }); // guest checkout
+open('modal', { action: 'PAYMENT', identityToken, data: { transaction: '<TRANSACTION>' } }); // wallet allowed
 
-| **Attribute** | **Required** | **Data Type** | **Explanation** |
-|---------------------|--------------|------------------|--------------------------------------------|
-| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
-| **data** | Yes | PaymentData | Additional information for payment |
-
-Details of PaymentData:
-
-| **Attribute** | **Required** | **Data Type** | **Explanation** |
-|---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
-| **transactionId** | Yes | String | Transaction ID |  
-| **amount** | Yes | Int | Total transaction amount |  
-| **note** | No | String | Transaction note |
-| **ipnUrl** | No | String | Path for PayME server ipn to check when the transaction progresses (success/failure) |
-| **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
-| **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
-
-Example:
-
-```javascript
-open("screen", {
-  action: "PAY",
-  identityToken: "<identityToken>",
-  data: {
-    amount: 10000,
-    note: "Thanh toán cho đơn hàng abc",
-    transactionId: "123",
-    ipnUrl: "www.google.com",
-  },
+open('modal', {
+  action: 'TRANSFER_QR',
+  identityToken,
+  data: { amount: 200000, bankNumber: '<BANK_NUMBER>', swiftCode: '<SWIFT_CODE>', cardHolder: 'NGUYEN VAN A' },
 });
+
+open('screen', { action: 'SERVICE', identityToken, data: { service: 'POWE' } });
+open('screen', { action: 'DEPOSIT', identityToken, data: { amount: 50000 } });
+open('screen', { action: 'KYC', identityToken });
+open('screen', { action: 'PAYME' });
 ```
 
-**PAYMENT:** Partners use this action when they want to open the payment interface of the Miniapp
+**Parameter validation**
 
-- The steps of retrieving a list of methods and generating transaction code will be carried out in the partner's application. (For details, please contact PayME)
+- iOS: a missing required `data` field (or a wrong type, such as a non-integer `amount`) for `PAY`, `PAYMENT`, `TRANSFER_QR` or `SERVICE`, or an unknown `action`: the Miniapp does not open and `onError` reports `code` `"INVALID_PARAM"`.
+- Android: the library does not report `INVALID_PARAM`; missing optional fields get defaults (`note`, `ipnUrl`, `description` = `''`; `isShowResult`, `isBackToApp` = `true`). Rely on the TypeScript types to always pass the required fields.
 
-  - Utilize API connection to fetch the list of methods.
-  - Then select a method, call the transaction creation API to retrieve the transaction.
+### getBalance
 
-| **Attribute** | **Required** | **Data Type**     | **Explanation**                              |
-| ------------- | ------------ | ----------------- | -------------------------------------------- |
-| **identityToken** | No       | String            | Identity string signed by PayME. With it the user can pay with the PayME wallet; without it the user pays as a guest |
-| **data**      | Yes          | PaymentDirectData | Additional information to facilitate payment |
+```ts
+declare function getBalance(identityToken: string): void;
+```
 
-Details of PaymentDirectData:
+Gets the user's wallet balance. The result arrives in `onResponse` with `action` `"GET_BALANCE"`:
 
-| **Attribute** | **Required** | **Data Type** | **Explanation** |
-|---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
-| **transaction** | Yes | String | Transaction code |
-| **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
-| **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
+| Field | Type | Description |
+| --- | --- | --- |
+| `linked` | `boolean` | Whether the user has linked the wallet to your app |
+| `balance` | `number` | Balance (only when `linked` is `true`) |
+| `message` | `string` | Server message |
 
-Example:
+Invalid or expired `identityToken`: `onError` with `code` `"401"`. Empty string: `"IDENTITY_TOKEN_REQUIRED"`.
 
-```javascript
-open("screen", {
-  action: "PAYMENT",
-  data: {
-    transaction: "123456",
-  },
+### getAccountInfo
+
+```ts
+declare function getAccountInfo(identityToken: string): void;
+```
+
+Gets the wallet account information. The result arrives in `onResponse` with `action` `"GET_ACCOUNT_INFO"`; the other fields are the `accountInfo` object returned by the PayME server (includes `accountId`). Account not found: `onError` (`code` `"OTHER"` on Android, `"SERVER"` on iOS). `identityToken` errors are the same as for `getBalance`.
+
+### setLanguage
+
+```ts
+declare function setLanguage(language: string): void;
+```
+
+Changes the Miniapp language after `init`. `'en'` selects English; any other value is treated as `'vi'`.
+
+### close
+
+```ts
+declare function close(): void;
+```
+
+Closes the open Miniapp.
+
+### PayMEMiniAppEvents
+
+A `NativeEventEmitter` with two events. `addListener` returns a subscription; call `remove()` when you no longer need it.
+
+| Event | Payload | When |
+| --- | --- | --- |
+| `onResponse` | `{ action: string, ...data }` | An action completes (for example a successful payment), or a `getBalance` / `getAccountInfo` result is ready |
+| `onError` | `{ action: string, code: string, description: string }` | An error occurs or the user closes the Miniapp |
+
+`action` is one of `PAYME`, `OPEN`, `KYC`, `PAY`, `PAYMENT`, `TRANSFER_QR`, `SERVICE`, `DEPOSIT`, `WITHDRAW`, `TRANSFER`, `GET_BALANCE`, `GET_ACCOUNT_INFO`.
+
+Platform differences:
+
+| | iOS | Android |
+| --- | --- | --- |
+| `onResponse` | Payload has `action` plus all data returned by the SDK | Same as iOS; no event is emitted when the SDK returns no data |
+| `onError` | Adds `INVALID_PARAM` (from the library's parameter check) | No `INVALID_PARAM` |
+| Listeners | Events emitted while no listener is registered are dropped | Events are always emitted |
+
+The library does not export payload types; declare them in your app:
+
+```ts
+import { PayMEMiniAppEvents } from 'payme-mini-app';
+
+type PayMEErrorEvent = { action: string; code: string; description: string };
+type PayMEResponseEvent = { action: string; [key: string]: unknown };
+
+const errorSub = PayMEMiniAppEvents.addListener('onError', (event) => {
+  const { action, code, description } = event as PayMEErrorEvent;
+  if (code === '401') {
+    // identityToken expired: get a new one from your server and open again
+  }
+  console.warn(action, code, description);
 });
-```
 
-**TRANSFER_QR:** Partners use this action when they want to open the payment interface of the Miniapp (from version 0.6.2 and above)
-
-- This action is used to transfer money from PayME wallet to the destination account provided by the partner.
-
-| **Attribute** | **Required** | **Data Type**  | **Explanation**                              |
-| ------------- | ------------ | -------------- | -------------------------------------------- |
-| **identityToken** | Yes      | String         | Identity string signed by PayME (see identityToken) |
-| **data**      | Yes          | TransferQRData | Additional information to facilitate payment |
-
-Details of TransferQRData:
-
-| **Attribute** | **Required** | **Data Type** | **Explanation** |
-|---------------------|--------------|------------------|--------------------------------------------------------------------------------------|
-| **amount** | Yes | Int | Transaction amount (if no amount is provided, pass 0) |
-| **bankNumber** | Yes | String | Bank account number |
-| **swiftCode** | Yes | String | Bank's swiftCode |
-| **cardHolder** | Yes | String | Cardholder's name |
-| **partnerTransaction** | No | String | Partner's Transaction (from version 0.6.8 and above) |
-| **note** | No | String | Transaction note |
-| **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
-| **isShowResult** | No | Boolean | Should PayME's result screen be displayed? (Default: true) |
-
-Example:
-
-```javascript
-open("screen", {
-  action: "TRANSFER_QR",
-  identityToken: "<identityToken>",
-  data: {
-    amount: 20000,
-    bankNumber: "9704000000000018",
-    swiftCode: "SBITVNVX",
-    cardHolder: "Nguyen Van A",
-    note: "Test",
-  },
+const responseSub = PayMEMiniAppEvents.addListener('onResponse', (event) => {
+  const data = event as PayMEResponseEvent;
+  if (data.action === 'GET_BALANCE') {
+    console.log(data.linked, data.balance);
+  }
 });
+
+// On unmount:
+errorSub.remove();
+responseSub.remove();
 ```
 
-**DEPOSIT:** Partners use this action when they want to open the interface to deposit money into the PayME wallet
+## Error codes
 
-| **Attribute** | **Required** | **Data Type** | **Explanation** |
-|---------------------|--------------|--------------------------------------|----------------------------------|
-| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
-| **data** | Yes | DepositWithdrawTransferData | Additional information for deposit |
+`onError` reports `code` as a string.
 
-Example:
+| `code` | Platform | Meaning | What to do |
+| --- | --- | --- | --- |
+| `401` | iOS, Android | `identityToken` is invalid or expired. The Miniapp closes if open | Get a new `identityToken` from your server and retry |
+| `IDENTITY_TOKEN_REQUIRED` | iOS, Android | `identityToken` missing (empty string) for a required action/function. The Miniapp does not open | Obtain an `identityToken` before calling |
+| `INVALID_PARAM` | iOS | Unknown `action`, or `data` is missing a required field / has a wrong type | Fix the parameters per the [action table](#open) |
+| `USER_CANCEL` | iOS, Android | The user closed the Miniapp | Not an error; update your UI if needed |
+| `SYSTEM_CANCEL` | iOS | The Miniapp could not start on the device | Retry; contact PayME if it persists |
+| `CONNECTION_LOST` | iOS, Android | Network connection lost | Check connectivity and retry |
+| `TIMED_OUT` | iOS, Android | Server request timed out | Retry |
+| `NO_RESPONSE` | iOS, Android | Server did not respond | Retry later |
+| `ENCODE_FAILED` | iOS, Android | Request encryption failed | Check `publicKey`, `privateKey`, `appId` and `env` |
+| `DECODE_FAILED` | iOS, Android | Response decryption failed | Check your keys and `env` |
+| `SERVER` | iOS | Server returned an error (see `description`) | Show `description` or retry |
+| `SERVER_ERROR` | Android | Server returned an error | Retry later |
+| `OTHER` | iOS, Android | Other error (for example account not found in `getAccountInfo`) | Show `description` |
+| Other codes | iOS, Android | Business errors reported by the Miniapp | Show `description`; contact PayME to look up a code |
 
-```javascript
-open("screen", {
-  action: "DEPOSIT",
-  identityToken: "<identityToken>",
-  data: {
-    amount: 10000,
-  },
-});
-```
+## Upgrading from 2.x
 
-**WITHDRAW:** Partners use this action when they want to open the interface to withdraw money from the PayME wallet
+3.0.0 replaces the phone number with `identityToken` and moves the native SDKs from 0.7.x to 0.8.x. It is not backward compatible.
 
-| **Attribute** | **Required** | **Data Type** | **Explanation** |
-|---------------------|--------------|--------------------------------------|----------------------------------|
-| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
-| **data** | Yes | DepositWithdrawTransferData | Additional information for withdraw |
+| 2.x | 3.0.0 |
+| --- | --- |
+| `open(type, { action, phone, data })` | `open(type, { action, identityToken, data })` |
+| `open('screen', { action: 'PAYME', phone })` | `open('screen', { action: 'PAYME' })` |
+| `open(type, { action: 'PAYMENT', phone?, data })` | `open(type, { action: 'PAYMENT', identityToken?, data })` |
+| `getBalance(phone)` | `getBalance(identityToken)` |
+| `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
+| iOS `PayME-Miniapp` 0.7.6 | iOS `PayME-Miniapp` 0.8.1, Xcode 26.2 or later |
+| Android `native-android` 0.7.2 | Android `native-android` 0.8.2 (SDK 1.0.24) |
+| — | Handle `onError` codes `"401"` and `"IDENTITY_TOKEN_REQUIRED"` |
 
-Example:
+Steps:
 
-```javascript
-open("screen", {
-  action: "WITHDRAW",
-  identityToken: "<identityToken>",
-  data: {
-    amount: 10000,
-  },
-});
-```
+1. Server: integrate PayME's `identityToken/init` API (contact PayME for the documentation and to enable it for your `appId`).
+2. App: `npm install payme-mini-app@^3.0.0`, then `cd ios && pod install`.
+3. Replace every `phone` with `identityToken`; drop `phone` from the `PAYME` action.
+4. Handle `401` (fetch a new token) and `IDENTITY_TOKEN_REQUIRED`.
+5. Build iOS with Xcode 26.2 or later.
 
-**TRANSFER:** Partners use this action when they want to open the money transfer interface
+`init`, `setLanguage`, `close`, `PayMEMiniAppEvents` and the `data` shape of each action are unchanged.
 
-| **Attribute** | **Required** | **Data Type** | **Explanation** |
-|---------------------|--------------|--------------------------------------|----------------------------------|
-| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
-| **data** | Yes | DepositWithdrawTransferData | Additional information for transfer |
+## Version history and support
 
-Example:
+| Version | Main changes |
+| --- | --- |
+| 3.0.0 | `identityToken` replaces the phone number; iOS `PayME-Miniapp` 0.8.1, Android `native-android` 0.8.2 (SDK 1.0.24) |
+| 2.0.0 | iOS `PayME-Miniapp` 0.7.6, Android `native-android` 0.7.2; phone-number identification |
 
-```javascript
-open("screen", {
-  action: "TRANSFER",
-  identityToken: "<identityToken>",
-  data: {
-    amount: 10000,
-  },
-});
-```
+All versions: [npm `payme-mini-app`](https://www.npmjs.com/package/payme-mini-app?activeTab=versions).
 
-Details of DepositWithdrawTransferData:
-
-| **Attribute** | **Required** | **Data Type** | **Explanation** |
-|---------------------|--------------|------------------|-------------------------------------------------------|
-| **description** | No | String | Transaction description |  
-| **amount** | No | Int | Total transaction amount |
-| **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
-| **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
-
-**KYC:** Partners use this action when they want to open the KYC interface
-
-| **Attribute** | **Required** | **Data Type** | **Explanation** |
-|---------------------|--------------|--------------------------------------|----------------------------------|
-| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
-
-Example:
-
-```javascript
-open("screen", {
-  action: "KYC",
-  identityToken: "<identityToken>",
-});
-```
-
-**SERVICE:** Partners use this action when they want to open the service payment interface
-
-| **Attribute** | **Required** | **Data Type** | **Explanation** |
-|--------------------|--------------|---------------|--------------------------------|
-| **identityToken** | Yes | String | Identity string signed by PayME (see identityToken) |
-| **data** | Yes | ServiceData | Additional information for service |
-
-Details of ServiceData:
-
-| **Attribute** | **Required** | **Data Type** | **Explanation** |
-|---------------|--------------|---------------|-----------------|
-| **service** | Yes | String | Service code (see the list below) |
-| **extraData** | No | Object | Additional data specified by the partner, this data will be returned to the partner upon successful payment. (from version 0.6.6 and above) |
-| **isShowResult** | No | Boolean | Does PayME display the result screen? (Default: true) |
-
-List of service codes:
-
-| **Value**        | **Explanation** |
-| ---------------- | --------------- |
-| **POWE**         | Electricity     |
-| **WATE**         | Water           |
-| **ADSL**         | Internet        |
-| **TIVI**         | Television      |
-| **PPMB**         | Postpaid phone  |
-| **MOBILE_CARD**  | Phone card      |
-| **MOBILE_TOPUP** | Top up mobile   |
-| **GAME_CARD**    | Game card       |
-
-Example:
-
-```javascript
-open("screen", {
-  action: "SERVICE",
-  identityToken: "<identityToken>",
-  data: {
-    service: "POWE",
-  },
-});
-```
-
-### Function getBalance
-
-Partners use this function to retrieve the balance information of a PayME account. The result will be returned in the onResponse event with the action GET_BALANCE.
-
-```typescript
-import { getBalance } from 'payme-mini-app'
-
-getBalance(identityToken: string)
-```
-
-| **Attribute** | **Required** | **Data Type** | **Explanation**                                                   |
-| ------------- | ------------ | ------------- | ----------------------------------------------------------------- |
-| **identityToken** | Yes      | String        | Identity string signed by PayME for the account to look up (see identityToken) |
-
-### Function getAccountInfo
-
-Partners use this function to retrieve information about a PayME account. The result will be returned in the onResponse event with the action GET_ACCOUNT_INFO.
-
-```typescript
-import { getAccountInfo } from 'payme-mini-app'
-
-getAccountInfo(identityToken: String)
-```
-
-| **Attribute** | **Required** | **Data Type** | **Explanation**                                                   |
-| ------------- | ------------ | ------------- | ----------------------------------------------------------------- |
-| **identityToken** | Yes      | String        | Identity string signed by PayME for the account to look up (see identityToken) |
-
-### Function setLanguage (from version 0.5.3 and above)
-
-Partners use this function to switch language.
-
-```typescript
-import { setLanguage } from 'payme-mini-app'
-
-setLanguage(language: String)
-```
-
-| **Attribute** | **Required** | **Data Type** | **Explanation**                     |
-| ------------- | ------------ | ------------- | ----------------------------------- |
-| **language**  | Yes          | String        | The language to switch to (vi, en). |
-
-### Function close (from version 0.7.0 and above)
-
-Partners use this function to close the mini-app.
-
-```javascript
-import { close } from "payme-mini-app";
-
-close();
-```
+Support: PayME Technology Corporation, [hotro@payme.vn](mailto:hotro@payme.vn), [payme.vn](https://payme.vn/web/home). Documentation issues: [GitHub Issues](https://github.com/PayME-Miniapp/payme-mini-app/issues). Keys, the `identityToken/init` API documentation and the `PAYMENT` transaction API: contact PayME.
