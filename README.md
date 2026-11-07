@@ -6,9 +6,9 @@ Thư viện React Native để tích hợp PayME Miniapp (ví điện tử, than
 
 | Gói | Phiên bản |
 | --- | --- |
-| npm `payme-mini-app` | **3.0.0** (không tương thích với 2.x) |
-| iOS pod `PayME-Miniapp` | 0.8.1 |
-| Android `com.github.PayME-Miniapp:native-android` | 0.8.2 (SDK 1.0.24) |
+| npm `payme-mini-app` | **3.0.1** (tương thích 3.0.0; không tương thích với 2.x) |
+| iOS pod `PayME-Miniapp` | 0.8.3 |
+| Android `com.github.PayME-Miniapp:native-android` | 0.8.4 (SDK 1.0.24) |
 
 Hai SDK native được khai báo sẵn trong thư viện, ứng dụng không cần thêm trực tiếp.
 
@@ -38,14 +38,14 @@ Hai SDK native được khai báo sẵn trong thư viện, ứng dụng không c
 ## Cài đặt
 
 ```sh
-npm install payme-mini-app@^3.0.0
+npm install payme-mini-app@^3.0.1
 # hoặc
-yarn add payme-mini-app@^3.0.0
+yarn add payme-mini-app@^3.0.1
 ```
 
 ### iOS
 
-Thư viện kéo pod `PayME-Miniapp` 0.8.1. Thêm cấu hình sau vào `ios/Podfile` (giống ứng dụng mẫu):
+Thư viện kéo pod `PayME-Miniapp` 0.8.3. Thêm cấu hình sau vào `ios/Podfile` (giống ứng dụng mẫu):
 
 ```ruby
 use_frameworks! :linkage => :static
@@ -182,11 +182,7 @@ Trong Xcode, chọn target ứng dụng → **Signing & Capabilities** → **+ C
 
    ![Near Field Communication Tag Reading](documents/capabilities2.png)
 
-2. Thêm **Background Modes** và bật **Background fetch** (cấu hình mẫu của PayME).
-
-   ![Background Modes](documents/capabilities1.png)
-
-   ![Background fetch](documents/background_fetch.png)
+SDK không cần **Background Modes** (Background fetch): bản cập nhật Miniapp được tải trong lúc mở, không tải nền.
 
 ### Android: quyền
 
@@ -196,15 +192,15 @@ Không cần khai báo thêm. Các quyền dưới đây nằm trong manifest c�
 
 ```tsx
 import { useEffect } from 'react';
-import { init, open, PayMEMiniAppEvents } from 'payme-mini-app';
+import { addErrorListener, addResponseListener, init, open } from 'payme-mini-app';
 
 export function usePayME() {
   useEffect(() => {
-    // Gọi một lần, sau khi màn hình đầu tiên đã mount (Android cần Activity hiện tại).
-    init('<APP_ID>', '<PUBLIC_KEY>', '<PRIVATE_KEY>', 'vi', 'SANDBOX', 'miniapp_sandbox');
+    // Gọi một lần khi màn hình đầu tiên mount. Không truyền mode: SANDBOX dùng 'miniapp_sandbox'.
+    init('<APP_ID>', '<PUBLIC_KEY>', '<PRIVATE_KEY>', 'vi', 'SANDBOX');
     const subs = [
-      PayMEMiniAppEvents.addListener('onResponse', (e) => console.log('PayME response', e)),
-      PayMEMiniAppEvents.addListener('onError', (e) => console.log('PayME error', e)),
+      addResponseListener((e) => console.log('PayME response', e.action)),
+      addErrorListener((e) => console.log('PayME error', e.action, e.code, e.description)),
     ];
     return () => subs.forEach((s) => s.remove());
   }, []);
@@ -249,11 +245,17 @@ Từ 3.0.0, thư viện không nhận số điện thoại nữa. Mỗi lần m�
 
 ```ts
 import {
-  init, open, getBalance, getAccountInfo, setLanguage, close, PayMEMiniAppEvents,
+  init, open, getBalance, getAccountInfo, setLanguage, close,
+  addResponseListener, addErrorListener, PayMEMiniAppEvents, PayMEErrorCode,
+} from 'payme-mini-app';
+import type {
+  PayMEOpeningParam, PayMEOpeningType, PayMEEnv, PayMEMode, PayMELocale,
+  PayMEPaymentParam, PayMEPaymentDirectParam, PayMETransferQRParam, PayMEServiceParam, PayMEPayParam,
+  PayMEErrorEvent, PayMEResponseEvent,
 } from 'payme-mini-app';
 ```
 
-Mọi hàm đều trả `void`. Kết quả và lỗi được trả bất đồng bộ qua [`PayMEMiniAppEvents`](#paymeminiappevents).
+Mọi hàm đều trả `void`. Kết quả và lỗi được trả bất đồng bộ qua [sự kiện](#sự-kiện) `onResponse` và `onError`.
 
 ### init
 
@@ -262,9 +264,9 @@ declare function init(
   appId: string,
   publicKey: string,
   privateKey: string,
-  locale?: 'vi' | 'en',                              // mặc định 'vi'
-  env?: 'PRODUCTION' | 'STAGING' | 'SANDBOX',        // mặc định 'PRODUCTION'
-  mode?: 'miniapp_sandbox' | 'miniapp_product',      // mặc định 'miniapp_product'
+  locale?: PayMELocale, // 'vi' | 'en', mặc định 'vi'
+  env?: PayMEEnv,       // 'PRODUCTION' | 'STAGING' | 'SANDBOX', mặc định 'PRODUCTION'
+  mode?: PayMEMode,     // 'miniapp_sandbox' | 'miniapp_product', mặc định theo env
 ): void;
 ```
 
@@ -275,31 +277,35 @@ declare function init(
 | `privateKey` | Có | Private key của ứng dụng, viết trên một dòng |
 | `locale` | Không | Ngôn ngữ giao diện |
 | `env` | Không | Môi trường máy chủ PayME |
-| `mode` | Không | `miniapp_sandbox` khi dùng `SANDBOX`, `miniapp_product` khi dùng `PRODUCTION` |
+| `mode` | Không | Kênh cập nhật Miniapp. Không truyền: `SANDBOX` dùng `miniapp_sandbox`, môi trường khác dùng `miniapp_product`. Truyền thì giữ nguyên giá trị đã truyền |
 
 Lưu ý:
 
-- Gọi `init` một lần, càng sớm càng tốt (SDK kiểm tra và tải bản Miniapp mới khi khởi tạo), và **trước mọi hàm khác**. Trên iOS, gọi `open`, `getBalance`, `getAccountInfo`, `setLanguage` hoặc `close` trước `init` sẽ làm ứng dụng crash.
-- Android cần Activity hiện tại: gọi trong `useEffect` của component gốc, không gọi ở top-level module. Nếu chưa có Activity, các lệnh sau đó bị bỏ qua mà không báo lỗi.
-- Đăng ký listener trước khi gọi `open`, `getBalance` hoặc `getAccountInfo`.
+- Gọi `init` một lần và **trước mọi hàm khác**. Gọi `open`, `getBalance`, `getAccountInfo`, `setLanguage` hoặc `close` trước `init`: lệnh không chạy, `onError` trả `code` = `"PAYME_NOT_INITIALIZED"` (cả hai nền tảng; trước 3.0.1, iOS crash).
+- Gọi lại `init` (ví dụ đổi `env`, `mode`, `locale`) không đóng Miniapp đang mở và `close()` vẫn đóng được nó. iOS: cùng `appId`/`publicKey`/`privateKey` thì giữ instance SDK, chỉ cập nhật cấu hình; đổi key thì Miniapp đang mở bị đóng trước.
+- Android: `open` dùng Activity hiện tại (SDK được tạo lại khi Activity đổi, ví dụ sau khi xoay màn hình). Chưa có Activity thì `open` trả `PAYME_NOT_INITIALIZED`. `getBalance`, `getAccountInfo`, `setLanguage`, `close` không cần Activity (chạy được khi app ở nền).
+- Đăng ký listener trước khi gọi `init`/`open`: trên iOS, sự kiện phát khi chưa có listener sẽ bị bỏ.
 
 ### open
 
 ```ts
-declare function open(type: 'screen' | 'modal', param: PayMEOpeningParam): void;
+declare function open(type: PayMEOpeningType, param: PayMEOpeningParam): void;
 ```
 
 | Tham số | Mô tả |
 | --- | --- |
-| `type` | `screen`: toàn màn hình. `modal`: trượt từ dưới lên |
+| `type` | `screen`: toàn màn hình. `modal`: trượt từ dưới lên. Không phân biệt hoa thường (`'Modal'` = `modal`); giá trị khác được hiểu là `screen` |
 | `param` | Object có `action`, `identityToken` (theo bảng ở [identityToken](#identitytoken)) và `data` (tuỳ action) |
 
-`PayMEOpeningParam` chưa được export từ gói. Nếu cần kiểu này, lấy qua `Parameters`:
+`PayMEOpeningParam` là union theo `action`, export từ gói cùng các kiểu `data`:
 
 ```ts
-import { open } from 'payme-mini-app';
+import { open, type PayMEOpeningParam } from 'payme-mini-app';
 
-type PayMEOpeningParam = Parameters<typeof open>[1];
+declare const identityToken: string; // lấy từ server của bạn
+
+const param: PayMEOpeningParam = { action: 'OPEN', identityToken };
+open('modal', param);
 ```
 
 **Danh sách action**
@@ -308,29 +314,29 @@ type PayMEOpeningParam = Parameters<typeof open>[1];
 | --- | --- | --- | --- |
 | `OPEN` | Mở trang chủ ví; nếu chưa kích hoạt ví thì mở luồng kích hoạt | Bắt buộc | Không có |
 | `KYC` | Mở luồng định danh (eKYC) | Bắt buộc | Không có |
-| `PAY` | Thanh toán đơn hàng của đối tác | Bắt buộc | [`PaymentParam`](#paymentparam-pay) |
-| `PAYMENT` | Thanh toán giao dịch đối tác đã tạo sẵn | Tuỳ chọn | [`PaymentDirectParam`](#paymentdirectparam-payment) |
-| `TRANSFER_QR` | Chuyển tiền từ ví PayME tới tài khoản ngân hàng do đối tác truyền | Bắt buộc | [`TransferQRParam`](#transferqrparam-transfer_qr) |
-| `SERVICE` | Thanh toán dịch vụ (điện, nước, thẻ…) | Bắt buộc | [`ServiceParam`](#serviceparam-service) |
-| `DEPOSIT` | Nạp tiền vào ví | Bắt buộc | [`PayParam`](#payparam-deposit-withdraw-transfer) |
-| `WITHDRAW` | Rút tiền khỏi ví | Bắt buộc | [`PayParam`](#payparam-deposit-withdraw-transfer) |
-| `TRANSFER` | Chuyển tiền | Bắt buộc | [`PayParam`](#payparam-deposit-withdraw-transfer) |
+| `PAY` | Thanh toán đơn hàng của đối tác | Bắt buộc | [`PayMEPaymentParam`](#paymepaymentparam-pay) |
+| `PAYMENT` | Thanh toán giao dịch đối tác đã tạo sẵn | Tuỳ chọn | [`PayMEPaymentDirectParam`](#paymepaymentdirectparam-payment) |
+| `TRANSFER_QR` | Chuyển tiền từ ví PayME tới tài khoản ngân hàng do đối tác truyền | Bắt buộc | [`PayMETransferQRParam`](#paymetransferqrparam-transfer_qr) |
+| `SERVICE` | Thanh toán dịch vụ (điện, nước, thẻ…) | Bắt buộc | [`PayMEServiceParam`](#paymeserviceparam-service) |
+| `DEPOSIT` | Nạp tiền vào ví | Bắt buộc | [`PayMEPayParam`](#paymepayparam-deposit-withdraw-transfer) |
+| `WITHDRAW` | Rút tiền khỏi ví | Bắt buộc | [`PayMEPayParam`](#paymepayparam-deposit-withdraw-transfer) |
+| `TRANSFER` | Chuyển tiền | Bắt buộc | [`PayMEPayParam`](#paymepayparam-deposit-withdraw-transfer) |
 | `PAYME` | Mở toàn bộ ví PayME, người dùng tự đăng nhập | Không dùng | Không có |
 
-Số tiền (`amount`) là số nguyên, đơn vị VND. `extraData` có kiểu `Record<string, string | object>`: dữ liệu riêng của đối tác, được trả lại khi giao dịch thành công. `isShowResult` và `isBackToApp` mặc định `true` trên cả hai nền tảng.
+Số tiền (`amount`) là số nguyên, đơn vị VND, tối đa 2.147.483.647; số lẻ (ví dụ `20000.5`) không hợp lệ (`20000.0` vẫn hợp lệ). `extraData` có kiểu `Record<string, string | object>`: dữ liệu riêng của đối tác, được trả lại khi giao dịch thành công. `isShowResult` và `isBackToApp` chỉ nhận boolean và mặc định `true` trên cả hai nền tảng; giá trị khác (ví dụ `0`/`1`) bị bỏ qua và dùng mặc định.
 
-#### PaymentParam (PAY)
+#### PayMEPaymentParam (PAY)
 
 | Trường | Kiểu | Bắt buộc | Mô tả |
 | --- | --- | --- | --- |
 | `transactionId` | `string` | Có | Mã giao dịch của đối tác |
 | `amount` | `number` | Có | Số tiền |
-| `ipnUrl` | `string` | Có | URL nhận IPN khi giao dịch thay đổi trạng thái. Truyền `''` nếu không dùng |
+| `ipnUrl` | `string` | Không | URL nhận IPN khi giao dịch thay đổi trạng thái |
 | `note` | `string` | Không | Ghi chú |
 | `extraData` | `Record<string, string \| object>` | Không | Dữ liệu riêng của đối tác |
 | `isShowResult` | `boolean` | Không | Hiện màn hình kết quả của PayME |
 
-#### PaymentDirectParam (PAYMENT)
+#### PayMEPaymentDirectParam (PAYMENT)
 
 Đối tác lấy danh sách phương thức và tạo giao dịch qua API của PayME (liên hệ PayME), rồi truyền mã giao dịch nhận được.
 
@@ -340,7 +346,7 @@ Số tiền (`amount`) là số nguyên, đơn vị VND. `extraData` có kiểu 
 | `extraData` | `Record<string, string \| object>` | Không | Dữ liệu riêng của đối tác |
 | `isShowResult` | `boolean` | Không | Hiện màn hình kết quả của PayME |
 
-#### TransferQRParam (TRANSFER_QR)
+#### PayMETransferQRParam (TRANSFER_QR)
 
 | Trường | Kiểu | Bắt buộc | Mô tả |
 | --- | --- | --- | --- |
@@ -353,7 +359,7 @@ Số tiền (`amount`) là số nguyên, đơn vị VND. `extraData` có kiểu 
 | `extraData` | `Record<string, string \| object>` | Không | Dữ liệu riêng của đối tác |
 | `isShowResult` | `boolean` | Không | Hiện màn hình kết quả của PayME |
 
-#### ServiceParam (SERVICE)
+#### PayMEServiceParam (SERVICE)
 
 | Trường | Kiểu | Bắt buộc | Mô tả |
 | --- | --- | --- | --- |
@@ -373,7 +379,7 @@ Số tiền (`amount`) là số nguyên, đơn vị VND. `extraData` có kiểu 
 | `MOBILE_TOPUP` | Nạp tiền điện thoại |
 | `GAME_CARD` | Thẻ game |
 
-#### PayParam (DEPOSIT, WITHDRAW, TRANSFER)
+#### PayMEPayParam (DEPOSIT, WITHDRAW, TRANSFER)
 
 | Trường | Kiểu | Bắt buộc | Mô tả |
 | --- | --- | --- | --- |
@@ -415,8 +421,10 @@ open('screen', { action: 'PAYME' });
 
 **Kiểm tra tham số**
 
-- iOS: thiếu trường bắt buộc trong `data` (hoặc sai kiểu, ví dụ `amount` không phải số nguyên) ở `PAY`, `PAYMENT`, `TRANSFER_QR`, `SERVICE`, hoặc `action` không hợp lệ: Miniapp không mở, `onError` trả `code` = `"INVALID_PARAM"`.
-- Android: thư viện không trả `INVALID_PARAM`; trường tuỳ chọn bị thiếu được điền mặc định (`note`, `ipnUrl`, `description` = `''`; `isShowResult`, `isBackToApp` = `true`). Hãy dựa vào kiểu TypeScript để luôn truyền đủ trường bắt buộc.
+- Thiếu `data` hoặc thiếu/sai kiểu trường bắt buộc ở `PAY`, `PAYMENT`, `TRANSFER_QR`, `SERVICE` (kể cả `amount` không nguyên), hoặc `action` không hợp lệ: Miniapp không mở, `onError` trả `code` = `"INVALID_PARAM"`. Giống nhau trên iOS và Android (trước 3.0.1, Android mở ví PayME).
+- `DEPOSIT`, `WITHDRAW`, `TRANSFER`: `amount` tuỳ chọn, nhưng nếu có mà không nguyên, vượt giới hạn hoặc sai kiểu thì cũng trả `INVALID_PARAM`.
+- Truyền sai kiểu từ JS (`null`, số thay cho chuỗi…) không làm crash ứng dụng.
+- Trên Android, trường tuỳ chọn bị thiếu được điền mặc định: `note`, `ipnUrl`, `description`, `partnerTransaction` = `''`; `isShowResult`, `isBackToApp` = `true`.
 
 ### getBalance
 
@@ -456,45 +464,66 @@ declare function setLanguage(language: string): void;
 declare function close(): void;
 ```
 
-Đóng Miniapp đang mở.
+Đóng Miniapp đang mở. Không có Miniapp nào mở thì không làm gì.
 
-### PayMEMiniAppEvents
+| | iOS | Android |
+| --- | --- | --- |
+| Cách đóng | Đóng chính Miniapp, kể cả khi đang bị che (máy ảnh, màn hình khác); không dismiss nhầm màn hình của ứng dụng | Đóng Miniapp (`screen` và `modal`) |
+| Sự kiện | `onError` `USER_CANCEL` một lần khi Miniapp đã đóng | Không phát `onError` |
 
-`NativeEventEmitter` phát hai sự kiện. `addListener` trả về subscription; gọi `remove()` khi không dùng nữa.
+### Mở, đóng và nút back
+
+- **Mỗi lúc chỉ một Miniapp.** Gọi `open` khi đang có Miniapp mở (iOS: hoặc đang kiểm tra/tải bản cập nhật trước khi mở): `onError` trả `MINIAPP_ALREADY_OPEN`, Miniapp đang mở giữ nguyên.
+- **Mở lại ngay trong callback đóng** (`USER_CANCEL`, hoặc kết quả làm Miniapp đóng) hay ngay sau `close()` được. iOS hoãn lần mở đến khi Miniapp cũ đã đóng hẳn; Android mở ngay.
+- **Một kết quả đóng mỗi phiên.** Mỗi lần mở chỉ có một kết quả đóng: `USER_CANCEL`, hoặc `onResponse`/`onError` làm Miniapp đóng. Miniapp chỉ bị che (máy ảnh eKYC, webview phụ) rồi hiện lại thì không phát `USER_CANCEL`.
+- **Nút back Android** (cả `screen` và `modal`): Miniapp đóng popup trên cùng (hoặc chặn back ở màn đang thanh toán); nếu không có, lùi về trang trước trong Miniapp; hết trang thì đóng Miniapp và `onError` trả `USER_CANCEL`.
+- iOS: thư viện mở Miniapp từ màn hình trên cùng của ứng dụng (hỗ trợ ứng dụng dùng scene và khi đang có RN `Modal`).
+
+### Sự kiện
+
+```ts
+declare function addResponseListener(listener: (event: PayMEResponseEvent) => void): EmitterSubscription;
+declare function addErrorListener(listener: (event: PayMEErrorEvent) => void): EmitterSubscription;
+```
+
+Thư viện phát hai sự kiện. `addResponseListener` và `addErrorListener` đăng ký listener có kiểu và trả về subscription; gọi `remove()` khi không dùng nữa. `PayMEMiniAppEvents` (`NativeEventEmitter`) vẫn dùng được: `PayMEMiniAppEvents.addListener('onResponse' | 'onError', ...)`, nhưng payload không có kiểu.
 
 | Sự kiện | Payload | Khi nào |
 | --- | --- | --- |
-| `onResponse` | `{ action: string, ...dữ liệu }` | Một action hoàn tất (ví dụ thanh toán thành công), hoặc có kết quả `getBalance` / `getAccountInfo` |
-| `onError` | `{ action: string, code: string, description: string }` | Có lỗi hoặc người dùng đóng Miniapp |
+| `onResponse` | `PayMEResponseEvent`: `{ action: string, ...dữ liệu }` | Một action hoàn tất (ví dụ thanh toán thành công), hoặc có kết quả `getBalance` / `getAccountInfo` |
+| `onError` | `PayMEErrorEvent`: `{ action: string, code: string, description: string }` | Có lỗi hoặc người dùng đóng Miniapp |
 
-`action` là một trong: `PAYME`, `OPEN`, `KYC`, `PAY`, `PAYMENT`, `TRANSFER_QR`, `SERVICE`, `DEPOSIT`, `WITHDRAW`, `TRANSFER`, `GET_BALANCE`, `GET_ACCOUNT_INFO`.
+`action` là một trong: `PAYME`, `OPEN`, `KYC`, `PAY`, `PAYMENT`, `TRANSFER_QR`, `SERVICE`, `DEPOSIT`, `WITHDRAW`, `TRANSFER`, `GET_BALANCE`, `GET_ACCOUNT_INFO`. Lỗi `PAYME_NOT_INITIALIZED` của `setLanguage` và `close` có `action` lần lượt là `SET_LANGUAGE` và `CLOSE`; lỗi `PAYME_SDK_ERROR` của `init` (Android) có `action` là `INIT`.
+
+Hằng `PayMEErrorCode` gồm các mã do thư viện tạo (`NOT_INITIALIZED` = `PAYME_NOT_INITIALIZED`, `INVALID_PARAM`, `SDK_ERROR` = `PAYME_SDK_ERROR`) và các mã SDK thường gặp (`IDENTITY_TOKEN_REQUIRED`, `USER_CANCEL`, `SYSTEM_CANCEL`, `MINIAPP_ALREADY_OPEN`, `MINIAPP_CANNOT_PRESENT`). Ý nghĩa xem [Mã lỗi](#mã-lỗi).
 
 Khác biệt giữa hai nền tảng:
 
 | | iOS | Android |
 | --- | --- | --- |
 | `onResponse` | Payload gồm `action` và toàn bộ dữ liệu SDK trả về | Như iOS; không phát sự kiện khi SDK không có dữ liệu kèm theo |
-| `onError` | Có thêm `INVALID_PARAM` (do thư viện kiểm tra tham số) | Không có `INVALID_PARAM` |
 | Listener | Sự kiện phát khi chưa có listener sẽ bị bỏ | Sự kiện luôn được phát |
 
-Thư viện không export kiểu cho payload; tự khai báo trong ứng dụng:
-
 ```ts
-import { PayMEMiniAppEvents } from 'payme-mini-app';
+import { addErrorListener, addResponseListener, PayMEErrorCode } from 'payme-mini-app';
 
-type PayMEErrorEvent = { action: string; code: string; description: string };
-type PayMEResponseEvent = { action: string; [key: string]: unknown };
-
-const errorSub = PayMEMiniAppEvents.addListener('onError', (event) => {
-  const { action, code, description } = event as PayMEErrorEvent;
-  if (code === '401') {
-    // identityToken hết hạn: lấy chuỗi mới từ server rồi mở lại
+const errorSub = addErrorListener(({ action, code, description }) => {
+  switch (code) {
+    case '401':
+      // identityToken hết hạn: lấy chuỗi mới từ server rồi mở lại
+      break;
+    case PayMEErrorCode.NOT_INITIALIZED:
+      // Chưa init (hoặc Android chưa có Activity khi open): gọi init rồi thử lại
+      break;
+    case PayMEErrorCode.USER_CANCEL:
+      // Người dùng đóng Miniapp
+      break;
+    default:
+      console.warn(action, code, description);
   }
-  console.warn(action, code, description);
 });
 
-const responseSub = PayMEMiniAppEvents.addListener('onResponse', (event) => {
-  const data = event as PayMEResponseEvent;
+const responseSub = addResponseListener((data) => {
   if (data.action === 'GET_BALANCE') {
     console.log(data.linked, data.balance);
   }
@@ -513,13 +542,17 @@ responseSub.remove();
 | --- | --- | --- | --- |
 | `401` | iOS, Android | `identityToken` sai hoặc hết hạn. Miniapp đóng nếu đang mở | Lấy `identityToken` mới từ server rồi gọi lại |
 | `IDENTITY_TOKEN_REQUIRED` | iOS, Android | Thiếu `identityToken` (chuỗi rỗng) ở action/hàm bắt buộc. Miniapp không mở | Lấy `identityToken` trước khi gọi |
-| `INVALID_PARAM` | iOS | `action` không hợp lệ, hoặc `data` thiếu trường bắt buộc / sai kiểu | Sửa tham số theo [bảng action](#open) |
-| `USER_CANCEL` | iOS, Android | Người dùng đóng Miniapp | Không phải lỗi; cập nhật giao diện nếu cần |
-| `SYSTEM_CANCEL` | iOS | Không khởi động được Miniapp trên thiết bị | Thử lại; nếu lặp lại, liên hệ PayME |
+| `INVALID_PARAM` | iOS, Android | `action` không hợp lệ, hoặc `data` thiếu trường bắt buộc / sai kiểu (kể cả `amount` không nguyên). Miniapp không mở | Sửa tham số theo [bảng action](#open) |
+| `PAYME_NOT_INITIALIZED` | iOS, Android | Gọi `open`, `getBalance`, `getAccountInfo`, `setLanguage`, `close` khi chưa `init` (Android: hoặc `open` khi chưa có Activity) | Gọi `init` trước; trên Android gọi `open` khi đã có Activity |
+| `USER_CANCEL` | iOS, Android | Người dùng đóng Miniapp (nút đóng, nút back Android khi hết trang, chạm ngoài `modal`); iOS: cả khi gọi `close()`. Báo một lần mỗi phiên | Không phải lỗi; cập nhật giao diện nếu cần |
+| `SYSTEM_CANCEL` | iOS | Không khởi động được Miniapp trên thiết bị (ví dụ web server cục bộ không chạy được). Miniapp tự đóng | Thử lại; nếu lặp lại, liên hệ PayME |
+| `MINIAPP_ALREADY_OPEN` | iOS, Android | Gọi `open` khi đang có Miniapp mở. Miniapp mới không mở, Miniapp đang mở giữ nguyên | Đợi Miniapp hiện tại đóng, hoặc gọi `close()` rồi mở lại |
+| `MINIAPP_CANNOT_PRESENT` | iOS, Android | Không hiển thị được Miniapp. iOS: không tìm được màn hình để present. Android: mở `modal` khi Activity không phải `FragmentActivity`, hoặc SDK lỗi khi hiển thị (ví dụ Activity đã lưu trạng thái) | Gọi `open` khi ứng dụng đang hiển thị ở foreground |
+| `PAYME_SDK_ERROR` | Android | SDK ném lỗi ngoài dự kiến khi gọi `init`, `getBalance`, `getAccountInfo`, `setLanguage` hoặc `close`; `description` là tên class exception | Ghi log và báo PayME |
 | `CONNECTION_LOST` | iOS, Android | Mất kết nối mạng | Kiểm tra mạng rồi thử lại |
 | `TIMED_OUT` | iOS, Android | Hết thời gian chờ máy chủ | Thử lại |
-| `NO_RESPONSE` | iOS, Android | Máy chủ không phản hồi | Thử lại sau |
-| `ENCODE_FAILED` | iOS, Android | Mã hoá request thất bại | Kiểm tra `publicKey`, `privateKey`, `appId` và `env` |
+| `NO_RESPONSE` | iOS | Máy chủ không phản hồi | Thử lại sau |
+| `ENCODE_FAILED` | iOS | Mã hoá request thất bại | Kiểm tra `publicKey`, `privateKey`, `appId` và `env` |
 | `DECODE_FAILED` | iOS, Android | Giải mã response thất bại | Kiểm tra bộ key và `env` |
 | `SERVER` | iOS | Máy chủ trả lỗi (xem `description`) | Hiển thị `description` hoặc thử lại |
 | `SERVER_ERROR` | Android | Máy chủ trả lỗi | Thử lại sau |
@@ -528,33 +561,34 @@ responseSub.remove();
 
 ## Nâng cấp từ 2.x
 
-3.0.0 thay số điện thoại bằng `identityToken` và nâng SDK native từ 0.7.x lên 0.8.x. Không tương thích ngược.
+3.0.0 thay số điện thoại bằng `identityToken` và nâng SDK native từ 0.7.x lên 0.8.x. Không tương thích ngược. Nâng thẳng lên 3.0.1 (tương thích 3.0.0, có thêm các sửa lỗi ở [Lịch sử phiên bản](#lịch-sử-phiên-bản-và-hỗ-trợ)).
 
-| 2.x | 3.0.0 |
+| 2.x | 3.0.1 |
 | --- | --- |
 | `open(type, { action, phone, data })` | `open(type, { action, identityToken, data })` |
 | `open('screen', { action: 'PAYME', phone })` | `open('screen', { action: 'PAYME' })` |
 | `open(type, { action: 'PAYMENT', phone?, data })` | `open(type, { action: 'PAYMENT', identityToken?, data })` |
 | `getBalance(phone)` | `getBalance(identityToken)` |
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
-| iOS `PayME-Miniapp` 0.7.6 | iOS `PayME-Miniapp` 0.8.1, Xcode 26.2 trở lên |
-| Android `native-android` 0.7.2 | Android `native-android` 0.8.2 (SDK 1.0.24) |
+| iOS `PayME-Miniapp` 0.7.6 | iOS `PayME-Miniapp` 0.8.3, Xcode 26.2 trở lên |
+| Android `native-android` 0.7.2 | Android `native-android` 0.8.4 (SDK 1.0.24) |
 | — | Thêm xử lý `onError` với `code` `"401"` và `"IDENTITY_TOKEN_REQUIRED"` |
 
 Các bước:
 
 1. Server: tích hợp API `identityToken/init` của PayME (liên hệ PayME để nhận tài liệu và bật cho `appId`).
-2. Ứng dụng: `npm install payme-mini-app@^3.0.0`, rồi `cd ios && pod install`.
+2. Ứng dụng: `npm install payme-mini-app@^3.0.1`, rồi `cd ios && pod install`.
 3. Thay mọi `phone` bằng `identityToken`; bỏ `phone` ở action `PAYME`.
 4. Xử lý `401` (lấy chuỗi mới) và `IDENTITY_TOKEN_REQUIRED`.
 5. Build iOS bằng Xcode 26.2 trở lên.
 
-`init`, `setLanguage`, `close`, `PayMEMiniAppEvents` và cấu trúc `data` của từng action không đổi.
+`init`, `setLanguage`, `close`, `PayMEMiniAppEvents` và cấu trúc `data` của từng action không đổi (từ 3.0.1, `ipnUrl` của `PAY` là tuỳ chọn).
 
 ## Lịch sử phiên bản và hỗ trợ
 
 | Phiên bản | Thay đổi chính |
 | --- | --- |
+| 3.0.1 | Tương thích 3.0.0. iOS `PayME-Miniapp` 0.8.3, Android `native-android` 0.8.4 (SDK 1.0.24): `USER_CANCEL` báo một lần mỗi phiên; mỗi lúc chỉ một Miniapp (`MINIAPP_ALREADY_OPEN`), mở lại trong callback đóng được; Android: nút back đóng popup → lùi trang → đóng Miniapp, không còn ép ứng dụng sang giao diện sáng hay đổi ngôn ngữ của ứng dụng. `mode` mặc định theo `env`. `type` không phân biệt hoa thường. `amount` không nguyên trả `INVALID_PARAM` ở mọi action; `isShowResult`/`isBackToApp` chỉ nhận boolean. Android: `open` dùng Activity hiện tại, `getBalance`/`getAccountInfo` chạy được khi chưa có Activity. iOS: mở từ màn hình trên cùng, `close()` đóng chính Miniapp, `init` lại cùng key giữ instance. Export kiểu (`PayMEOpeningParam`, `PayMEErrorEvent`…), `PayMEErrorCode`, `addErrorListener` / `addResponseListener`; `ipnUrl` tuỳ chọn. `INVALID_PARAM`, `PAYME_NOT_INITIALIZED` giống nhau trên hai nền tảng (trước đó iOS crash khi chưa `init`, Android bỏ qua lệnh hoặc mở ví khi thiếu `data`) |
 | 3.0.0 | `identityToken` thay số điện thoại; iOS `PayME-Miniapp` 0.8.1, Android `native-android` 0.8.2 (SDK 1.0.24) |
 | 2.0.0 | iOS `PayME-Miniapp` 0.7.6, Android `native-android` 0.7.2; định danh bằng số điện thoại |
 

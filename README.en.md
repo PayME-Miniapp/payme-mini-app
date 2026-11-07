@@ -6,9 +6,9 @@ React Native library for embedding PayME Miniapp (e-wallet, payments, top-up, wi
 
 | Package | Version |
 | --- | --- |
-| npm `payme-mini-app` | **3.0.0** (breaking change from 2.x) |
-| iOS pod `PayME-Miniapp` | 0.8.1 |
-| Android `com.github.PayME-Miniapp:native-android` | 0.8.2 (SDK 1.0.24) |
+| npm `payme-mini-app` | **3.0.1** (compatible with 3.0.0; breaking change from 2.x) |
+| iOS pod `PayME-Miniapp` | 0.8.3 |
+| Android `com.github.PayME-Miniapp:native-android` | 0.8.4 (SDK 1.0.24) |
 
 Both native SDKs are declared by the library; your app does not add them directly.
 
@@ -38,14 +38,14 @@ Both native SDKs are declared by the library; your app does not add them directl
 ## Installation
 
 ```sh
-npm install payme-mini-app@^3.0.0
+npm install payme-mini-app@^3.0.1
 # or
-yarn add payme-mini-app@^3.0.0
+yarn add payme-mini-app@^3.0.1
 ```
 
 ### iOS
 
-The library pulls in the `PayME-Miniapp` 0.8.1 pod. Add the following to `ios/Podfile` (same as the example app):
+The library pulls in the `PayME-Miniapp` 0.8.3 pod. Add the following to `ios/Podfile` (same as the example app):
 
 ```ruby
 use_frameworks! :linkage => :static
@@ -182,11 +182,7 @@ In Xcode, select your app target → **Signing & Capabilities** → **+ Capabili
 
    ![Near Field Communication Tag Reading](documents/capabilities2.png)
 
-2. Add **Background Modes** and enable **Background fetch** (PayME's reference configuration).
-
-   ![Background Modes](documents/capabilities1.png)
-
-   ![Background fetch](documents/background_fetch.png)
+The SDK does not need **Background Modes** (Background fetch): Miniapp updates are downloaded while opening, not in the background.
 
 ### Android: permissions
 
@@ -196,15 +192,15 @@ Nothing to declare. The SDK manifest contains the permissions below and Gradle m
 
 ```tsx
 import { useEffect } from 'react';
-import { init, open, PayMEMiniAppEvents } from 'payme-mini-app';
+import { addErrorListener, addResponseListener, init, open } from 'payme-mini-app';
 
 export function usePayME() {
   useEffect(() => {
-    // Call once, after the first screen has mounted (Android needs the current Activity).
-    init('<APP_ID>', '<PUBLIC_KEY>', '<PRIVATE_KEY>', 'vi', 'SANDBOX', 'miniapp_sandbox');
+    // Call once when the first screen mounts. Without mode, SANDBOX uses 'miniapp_sandbox'.
+    init('<APP_ID>', '<PUBLIC_KEY>', '<PRIVATE_KEY>', 'vi', 'SANDBOX');
     const subs = [
-      PayMEMiniAppEvents.addListener('onResponse', (e) => console.log('PayME response', e)),
-      PayMEMiniAppEvents.addListener('onError', (e) => console.log('PayME error', e)),
+      addResponseListener((e) => console.log('PayME response', e.action)),
+      addErrorListener((e) => console.log('PayME error', e.action, e.code, e.description)),
     ];
     return () => subs.forEach((s) => s.remove());
   }, []);
@@ -249,11 +245,17 @@ Since 3.0.0 the library no longer accepts a phone number. Each time you open the
 
 ```ts
 import {
-  init, open, getBalance, getAccountInfo, setLanguage, close, PayMEMiniAppEvents,
+  init, open, getBalance, getAccountInfo, setLanguage, close,
+  addResponseListener, addErrorListener, PayMEMiniAppEvents, PayMEErrorCode,
+} from 'payme-mini-app';
+import type {
+  PayMEOpeningParam, PayMEOpeningType, PayMEEnv, PayMEMode, PayMELocale,
+  PayMEPaymentParam, PayMEPaymentDirectParam, PayMETransferQRParam, PayMEServiceParam, PayMEPayParam,
+  PayMEErrorEvent, PayMEResponseEvent,
 } from 'payme-mini-app';
 ```
 
-Every function returns `void`. Results and errors arrive asynchronously through [`PayMEMiniAppEvents`](#paymeminiappevents).
+Every function returns `void`. Results and errors arrive asynchronously through the `onResponse` and `onError` [events](#events).
 
 ### init
 
@@ -262,9 +264,9 @@ declare function init(
   appId: string,
   publicKey: string,
   privateKey: string,
-  locale?: 'vi' | 'en',                              // default 'vi'
-  env?: 'PRODUCTION' | 'STAGING' | 'SANDBOX',        // default 'PRODUCTION'
-  mode?: 'miniapp_sandbox' | 'miniapp_product',      // default 'miniapp_product'
+  locale?: PayMELocale, // 'vi' | 'en', default 'vi'
+  env?: PayMEEnv,       // 'PRODUCTION' | 'STAGING' | 'SANDBOX', default 'PRODUCTION'
+  mode?: PayMEMode,     // 'miniapp_sandbox' | 'miniapp_product', default depends on env
 ): void;
 ```
 
@@ -275,31 +277,35 @@ declare function init(
 | `privateKey` | Yes | Your app's private key, on a single line |
 | `locale` | No | UI language |
 | `env` | No | PayME server environment |
-| `mode` | No | `miniapp_sandbox` with `SANDBOX`, `miniapp_product` with `PRODUCTION` |
+| `mode` | No | Miniapp update channel. When omitted: `miniapp_sandbox` for `SANDBOX`, `miniapp_product` for other environments. A value you pass is used as is |
 
 Notes:
 
-- Call `init` once, as early as possible (the SDK checks for and downloads Miniapp updates at initialization), and **before any other function**. On iOS, calling `open`, `getBalance`, `getAccountInfo`, `setLanguage` or `close` before `init` crashes the app.
-- Android needs the current Activity: call it in a `useEffect` of your root component, not at module top level. If there is no Activity yet, later calls are silently ignored.
-- Register listeners before calling `open`, `getBalance` or `getAccountInfo`.
+- Call `init` once and **before any other function**. Calling `open`, `getBalance`, `getAccountInfo`, `setLanguage` or `close` before `init` does nothing and `onError` reports `code` `"PAYME_NOT_INITIALIZED"` (both platforms; before 3.0.1, iOS crashed).
+- Calling `init` again (for example to change `env`, `mode` or `locale`) does not close an open Miniapp, and `close()` still closes it. iOS: with the same `appId`/`publicKey`/`privateKey` the SDK instance is kept and only the configuration is updated; with different keys the open Miniapp is closed first.
+- Android: `open` uses the current Activity (the SDK is recreated when the Activity changes, for example after rotation). With no Activity, `open` reports `PAYME_NOT_INITIALIZED`. `getBalance`, `getAccountInfo`, `setLanguage` and `close` do not need an Activity (they work while the app is in the background).
+- Register listeners before calling `init`/`open`: on iOS, events emitted while no listener is registered are dropped.
 
 ### open
 
 ```ts
-declare function open(type: 'screen' | 'modal', param: PayMEOpeningParam): void;
+declare function open(type: PayMEOpeningType, param: PayMEOpeningParam): void;
 ```
 
 | Parameter | Description |
 | --- | --- |
-| `type` | `screen`: full screen. `modal`: slides up from the bottom |
+| `type` | `screen`: full screen. `modal`: slides up from the bottom. Case-insensitive (`'Modal'` = `modal`); any other value is treated as `screen` |
 | `param` | Object with `action`, `identityToken` (see the table in [identityToken](#identitytoken)) and `data` (depends on the action) |
 
-`PayMEOpeningParam` is not exported by the package. If you need the type, derive it with `Parameters`:
+`PayMEOpeningParam` is a union keyed by `action`, exported by the package together with the `data` types:
 
 ```ts
-import { open } from 'payme-mini-app';
+import { open, type PayMEOpeningParam } from 'payme-mini-app';
 
-type PayMEOpeningParam = Parameters<typeof open>[1];
+declare const identityToken: string; // from your server
+
+const param: PayMEOpeningParam = { action: 'OPEN', identityToken };
+open('modal', param);
 ```
 
 **Actions**
@@ -308,29 +314,29 @@ type PayMEOpeningParam = Parameters<typeof open>[1];
 | --- | --- | --- | --- |
 | `OPEN` | Open the wallet home; starts activation if the wallet is not activated yet | Required | None |
 | `KYC` | Open identity verification (eKYC) | Required | None |
-| `PAY` | Pay a partner order | Required | [`PaymentParam`](#paymentparam-pay) |
-| `PAYMENT` | Pay a transaction the partner has already created | Optional | [`PaymentDirectParam`](#paymentdirectparam-payment) |
-| `TRANSFER_QR` | Transfer from the PayME wallet to a bank account given by the partner | Required | [`TransferQRParam`](#transferqrparam-transfer_qr) |
-| `SERVICE` | Pay a bill or service (electricity, water, cards…) | Required | [`ServiceParam`](#serviceparam-service) |
-| `DEPOSIT` | Top up the wallet | Required | [`PayParam`](#payparam-deposit-withdraw-transfer) |
-| `WITHDRAW` | Withdraw from the wallet | Required | [`PayParam`](#payparam-deposit-withdraw-transfer) |
-| `TRANSFER` | Transfer money | Required | [`PayParam`](#payparam-deposit-withdraw-transfer) |
+| `PAY` | Pay a partner order | Required | [`PayMEPaymentParam`](#paymepaymentparam-pay) |
+| `PAYMENT` | Pay a transaction the partner has already created | Optional | [`PayMEPaymentDirectParam`](#paymepaymentdirectparam-payment) |
+| `TRANSFER_QR` | Transfer from the PayME wallet to a bank account given by the partner | Required | [`PayMETransferQRParam`](#paymetransferqrparam-transfer_qr) |
+| `SERVICE` | Pay a bill or service (electricity, water, cards…) | Required | [`PayMEServiceParam`](#paymeserviceparam-service) |
+| `DEPOSIT` | Top up the wallet | Required | [`PayMEPayParam`](#paymepayparam-deposit-withdraw-transfer) |
+| `WITHDRAW` | Withdraw from the wallet | Required | [`PayMEPayParam`](#paymepayparam-deposit-withdraw-transfer) |
+| `TRANSFER` | Transfer money | Required | [`PayMEPayParam`](#paymepayparam-deposit-withdraw-transfer) |
 | `PAYME` | Open the full PayME wallet; the user signs in | Not used | None |
 
-`amount` is an integer in VND. `extraData` is a `Record<string, string | object>`: partner data returned to you when the transaction succeeds. `isShowResult` and `isBackToApp` default to `true` on both platforms.
+`amount` is an integer in VND, at most 2,147,483,647; fractional values (for example `20000.5`) are invalid (`20000.0` is accepted). `extraData` is a `Record<string, string | object>`: partner data returned to you when the transaction succeeds. `isShowResult` and `isBackToApp` accept booleans only and default to `true` on both platforms; other values (for example `0`/`1`) are ignored and the default is used.
 
-#### PaymentParam (PAY)
+#### PayMEPaymentParam (PAY)
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `transactionId` | `string` | Yes | Partner transaction ID |
 | `amount` | `number` | Yes | Amount |
-| `ipnUrl` | `string` | Yes | URL that receives IPN callbacks when the transaction changes state. Pass `''` if unused |
+| `ipnUrl` | `string` | No | URL that receives IPN callbacks when the transaction changes state |
 | `note` | `string` | No | Note |
 | `extraData` | `Record<string, string \| object>` | No | Partner data |
 | `isShowResult` | `boolean` | No | Show PayME's result screen |
 
-#### PaymentDirectParam (PAYMENT)
+#### PayMEPaymentDirectParam (PAYMENT)
 
 The partner fetches the payment methods and creates the transaction through PayME's API (contact PayME), then passes the transaction code it received.
 
@@ -340,7 +346,7 @@ The partner fetches the payment methods and creates the transaction through PayM
 | `extraData` | `Record<string, string \| object>` | No | Partner data |
 | `isShowResult` | `boolean` | No | Show PayME's result screen |
 
-#### TransferQRParam (TRANSFER_QR)
+#### PayMETransferQRParam (TRANSFER_QR)
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -353,7 +359,7 @@ The partner fetches the payment methods and creates the transaction through PayM
 | `extraData` | `Record<string, string \| object>` | No | Partner data |
 | `isShowResult` | `boolean` | No | Show PayME's result screen |
 
-#### ServiceParam (SERVICE)
+#### PayMEServiceParam (SERVICE)
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -373,7 +379,7 @@ The partner fetches the payment methods and creates the transaction through PayM
 | `MOBILE_TOPUP` | Mobile top-up |
 | `GAME_CARD` | Game card |
 
-#### PayParam (DEPOSIT, WITHDRAW, TRANSFER)
+#### PayMEPayParam (DEPOSIT, WITHDRAW, TRANSFER)
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -415,8 +421,10 @@ open('screen', { action: 'PAYME' });
 
 **Parameter validation**
 
-- iOS: a missing required `data` field (or a wrong type, such as a non-integer `amount`) for `PAY`, `PAYMENT`, `TRANSFER_QR` or `SERVICE`, or an unknown `action`: the Miniapp does not open and `onError` reports `code` `"INVALID_PARAM"`.
-- Android: the library does not report `INVALID_PARAM`; missing optional fields get defaults (`note`, `ipnUrl`, `description` = `''`; `isShowResult`, `isBackToApp` = `true`). Rely on the TypeScript types to always pass the required fields.
+- Missing `data`, or a missing or wrongly typed required field for `PAY`, `PAYMENT`, `TRANSFER_QR` or `SERVICE` (including a non-integer `amount`), or an unknown `action`: the Miniapp does not open and `onError` reports `code` `"INVALID_PARAM"`. Same on iOS and Android (before 3.0.1, Android opened the PayME wallet instead).
+- `DEPOSIT`, `WITHDRAW`, `TRANSFER`: `amount` is optional, but a non-integer, out-of-range or wrongly typed `amount` also reports `INVALID_PARAM`.
+- Wrong JS argument types (`null`, a number instead of a string…) no longer crash the app.
+- On Android, missing optional fields get defaults: `note`, `ipnUrl`, `description`, `partnerTransaction` = `''`; `isShowResult`, `isBackToApp` = `true`.
 
 ### getBalance
 
@@ -456,45 +464,66 @@ Changes the Miniapp language after `init`. `'en'` selects English; any other val
 declare function close(): void;
 ```
 
-Closes the open Miniapp.
+Closes the open Miniapp. Does nothing when no Miniapp is open.
 
-### PayMEMiniAppEvents
+| | iOS | Android |
+| --- | --- | --- |
+| How it closes | Closes the Miniapp itself, even while it is covered (camera, another screen); never dismisses one of your screens by mistake | Closes the Miniapp (`screen` and `modal`) |
+| Event | `onError` `USER_CANCEL` once the Miniapp has closed | No `onError` |
 
-A `NativeEventEmitter` with two events. `addListener` returns a subscription; call `remove()` when you no longer need it.
+### Opening, closing and the back button
+
+- **One Miniapp at a time.** Calling `open` while a Miniapp is open (iOS: or while an update is being checked or downloaded before opening) reports `MINIAPP_ALREADY_OPEN`; the open Miniapp is not affected.
+- **Reopening from the closing callback** (`USER_CANCEL`, or a result that closes the Miniapp) or right after `close()` works. iOS defers the open until the previous Miniapp has gone; Android opens immediately.
+- **One closing result per session.** Each open has exactly one closing result: `USER_CANCEL`, or the `onResponse`/`onError` that closes the Miniapp. When the Miniapp is only covered (eKYC camera, sub-webview) and comes back, no `USER_CANCEL` is sent.
+- **Android back button** (`screen` and `modal`): the Miniapp closes its top popup (or blocks back on a payment-in-progress screen); otherwise it goes back one page; on its first page it closes and `onError` reports `USER_CANCEL`.
+- iOS: the library opens the Miniapp from the top-most screen of your app (works with scene-based apps and while an RN `Modal` is shown).
+
+### Events
+
+```ts
+declare function addResponseListener(listener: (event: PayMEResponseEvent) => void): EmitterSubscription;
+declare function addErrorListener(listener: (event: PayMEErrorEvent) => void): EmitterSubscription;
+```
+
+The library emits two events. `addResponseListener` and `addErrorListener` register typed listeners and return a subscription; call `remove()` when you no longer need it. `PayMEMiniAppEvents` (a `NativeEventEmitter`) still works: `PayMEMiniAppEvents.addListener('onResponse' | 'onError', ...)`, but its payloads are untyped.
 
 | Event | Payload | When |
 | --- | --- | --- |
-| `onResponse` | `{ action: string, ...data }` | An action completes (for example a successful payment), or a `getBalance` / `getAccountInfo` result is ready |
-| `onError` | `{ action: string, code: string, description: string }` | An error occurs or the user closes the Miniapp |
+| `onResponse` | `PayMEResponseEvent`: `{ action: string, ...data }` | An action completes (for example a successful payment), or a `getBalance` / `getAccountInfo` result is ready |
+| `onError` | `PayMEErrorEvent`: `{ action: string, code: string, description: string }` | An error occurs or the user closes the Miniapp |
 
-`action` is one of `PAYME`, `OPEN`, `KYC`, `PAY`, `PAYMENT`, `TRANSFER_QR`, `SERVICE`, `DEPOSIT`, `WITHDRAW`, `TRANSFER`, `GET_BALANCE`, `GET_ACCOUNT_INFO`.
+`action` is one of `PAYME`, `OPEN`, `KYC`, `PAY`, `PAYMENT`, `TRANSFER_QR`, `SERVICE`, `DEPOSIT`, `WITHDRAW`, `TRANSFER`, `GET_BALANCE`, `GET_ACCOUNT_INFO`. A `PAYME_NOT_INITIALIZED` error from `setLanguage` or `close` has `action` `SET_LANGUAGE` or `CLOSE` respectively; a `PAYME_SDK_ERROR` from `init` (Android) has `action` `INIT`.
+
+The `PayMEErrorCode` constant lists the codes generated by the library (`NOT_INITIALIZED` = `PAYME_NOT_INITIALIZED`, `INVALID_PARAM`, `SDK_ERROR` = `PAYME_SDK_ERROR`) and common SDK codes (`IDENTITY_TOKEN_REQUIRED`, `USER_CANCEL`, `SYSTEM_CANCEL`, `MINIAPP_ALREADY_OPEN`, `MINIAPP_CANNOT_PRESENT`). See [Error codes](#error-codes) for their meaning.
 
 Platform differences:
 
 | | iOS | Android |
 | --- | --- | --- |
 | `onResponse` | Payload has `action` plus all data returned by the SDK | Same as iOS; no event is emitted when the SDK returns no data |
-| `onError` | Adds `INVALID_PARAM` (from the library's parameter check) | No `INVALID_PARAM` |
 | Listeners | Events emitted while no listener is registered are dropped | Events are always emitted |
 
-The library does not export payload types; declare them in your app:
-
 ```ts
-import { PayMEMiniAppEvents } from 'payme-mini-app';
+import { addErrorListener, addResponseListener, PayMEErrorCode } from 'payme-mini-app';
 
-type PayMEErrorEvent = { action: string; code: string; description: string };
-type PayMEResponseEvent = { action: string; [key: string]: unknown };
-
-const errorSub = PayMEMiniAppEvents.addListener('onError', (event) => {
-  const { action, code, description } = event as PayMEErrorEvent;
-  if (code === '401') {
-    // identityToken expired: get a new one from your server and open again
+const errorSub = addErrorListener(({ action, code, description }) => {
+  switch (code) {
+    case '401':
+      // identityToken expired: get a new one from your server and open again
+      break;
+    case PayMEErrorCode.NOT_INITIALIZED:
+      // Not initialized (or no Activity yet for open on Android): call init, then retry
+      break;
+    case PayMEErrorCode.USER_CANCEL:
+      // The user closed the Miniapp
+      break;
+    default:
+      console.warn(action, code, description);
   }
-  console.warn(action, code, description);
 });
 
-const responseSub = PayMEMiniAppEvents.addListener('onResponse', (event) => {
-  const data = event as PayMEResponseEvent;
+const responseSub = addResponseListener((data) => {
   if (data.action === 'GET_BALANCE') {
     console.log(data.linked, data.balance);
   }
@@ -513,13 +542,17 @@ responseSub.remove();
 | --- | --- | --- | --- |
 | `401` | iOS, Android | `identityToken` is invalid or expired. The Miniapp closes if open | Get a new `identityToken` from your server and retry |
 | `IDENTITY_TOKEN_REQUIRED` | iOS, Android | `identityToken` missing (empty string) for a required action/function. The Miniapp does not open | Obtain an `identityToken` before calling |
-| `INVALID_PARAM` | iOS | Unknown `action`, or `data` is missing a required field / has a wrong type | Fix the parameters per the [action table](#open) |
-| `USER_CANCEL` | iOS, Android | The user closed the Miniapp | Not an error; update your UI if needed |
-| `SYSTEM_CANCEL` | iOS | The Miniapp could not start on the device | Retry; contact PayME if it persists |
+| `INVALID_PARAM` | iOS, Android | Unknown `action`, or `data` is missing a required field / has a wrong type (including a non-integer `amount`). The Miniapp does not open | Fix the parameters per the [action table](#open) |
+| `PAYME_NOT_INITIALIZED` | iOS, Android | `open`, `getBalance`, `getAccountInfo`, `setLanguage` or `close` called before `init` (Android: or `open` with no Activity yet) | Call `init` first; on Android, call `open` once an Activity exists |
+| `USER_CANCEL` | iOS, Android | The user closed the Miniapp (close button, Android back on the first page, tap outside a `modal`); iOS: also after `close()`. Reported once per session | Not an error; update your UI if needed |
+| `SYSTEM_CANCEL` | iOS | The Miniapp could not start on the device (for example the local web server failed to start). The Miniapp closes | Retry; contact PayME if it persists |
+| `MINIAPP_ALREADY_OPEN` | iOS, Android | `open` called while a Miniapp is open. The new one does not open; the open one is not affected | Wait for the current Miniapp to close, or call `close()` and open again |
+| `MINIAPP_CANNOT_PRESENT` | iOS, Android | The Miniapp cannot be shown. iOS: no screen to present from. Android: `modal` while the Activity is not a `FragmentActivity`, or the SDK failed to show it (for example after the Activity saved its state) | Call `open` while your app is in the foreground |
+| `PAYME_SDK_ERROR` | Android | The SDK threw an unexpected exception in `init`, `getBalance`, `getAccountInfo`, `setLanguage` or `close`; `description` is the exception class name | Log it and report to PayME |
 | `CONNECTION_LOST` | iOS, Android | Network connection lost | Check connectivity and retry |
 | `TIMED_OUT` | iOS, Android | Server request timed out | Retry |
-| `NO_RESPONSE` | iOS, Android | Server did not respond | Retry later |
-| `ENCODE_FAILED` | iOS, Android | Request encryption failed | Check `publicKey`, `privateKey`, `appId` and `env` |
+| `NO_RESPONSE` | iOS | Server did not respond | Retry later |
+| `ENCODE_FAILED` | iOS | Request encryption failed | Check `publicKey`, `privateKey`, `appId` and `env` |
 | `DECODE_FAILED` | iOS, Android | Response decryption failed | Check your keys and `env` |
 | `SERVER` | iOS | Server returned an error (see `description`) | Show `description` or retry |
 | `SERVER_ERROR` | Android | Server returned an error | Retry later |
@@ -528,33 +561,34 @@ responseSub.remove();
 
 ## Upgrading from 2.x
 
-3.0.0 replaces the phone number with `identityToken` and moves the native SDKs from 0.7.x to 0.8.x. It is not backward compatible.
+3.0.0 replaces the phone number with `identityToken` and moves the native SDKs from 0.7.x to 0.8.x. It is not backward compatible. Upgrade straight to 3.0.1 (compatible with 3.0.0, with the fixes listed in [Version history](#version-history-and-support)).
 
-| 2.x | 3.0.0 |
+| 2.x | 3.0.1 |
 | --- | --- |
 | `open(type, { action, phone, data })` | `open(type, { action, identityToken, data })` |
 | `open('screen', { action: 'PAYME', phone })` | `open('screen', { action: 'PAYME' })` |
 | `open(type, { action: 'PAYMENT', phone?, data })` | `open(type, { action: 'PAYMENT', identityToken?, data })` |
 | `getBalance(phone)` | `getBalance(identityToken)` |
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
-| iOS `PayME-Miniapp` 0.7.6 | iOS `PayME-Miniapp` 0.8.1, Xcode 26.2 or later |
-| Android `native-android` 0.7.2 | Android `native-android` 0.8.2 (SDK 1.0.24) |
+| iOS `PayME-Miniapp` 0.7.6 | iOS `PayME-Miniapp` 0.8.3, Xcode 26.2 or later |
+| Android `native-android` 0.7.2 | Android `native-android` 0.8.4 (SDK 1.0.24) |
 | — | Handle `onError` codes `"401"` and `"IDENTITY_TOKEN_REQUIRED"` |
 
 Steps:
 
 1. Server: integrate PayME's `identityToken/init` API (contact PayME for the documentation and to enable it for your `appId`).
-2. App: `npm install payme-mini-app@^3.0.0`, then `cd ios && pod install`.
+2. App: `npm install payme-mini-app@^3.0.1`, then `cd ios && pod install`.
 3. Replace every `phone` with `identityToken`; drop `phone` from the `PAYME` action.
 4. Handle `401` (fetch a new token) and `IDENTITY_TOKEN_REQUIRED`.
 5. Build iOS with Xcode 26.2 or later.
 
-`init`, `setLanguage`, `close`, `PayMEMiniAppEvents` and the `data` shape of each action are unchanged.
+`init`, `setLanguage`, `close`, `PayMEMiniAppEvents` and the `data` shape of each action are unchanged (since 3.0.1, `ipnUrl` in `PAY` is optional).
 
 ## Version history and support
 
 | Version | Main changes |
 | --- | --- |
+| 3.0.1 | Compatible with 3.0.0. iOS `PayME-Miniapp` 0.8.3, Android `native-android` 0.8.4 (SDK 1.0.24): `USER_CANCEL` is reported once per session; one Miniapp at a time (`MINIAPP_ALREADY_OPEN`), reopening from the closing callback works; Android: back closes a popup → goes back a page → closes the Miniapp, and the host app is no longer forced into light mode or switched to another language. `mode` defaults by `env`. `type` is case-insensitive. A non-integer `amount` is `INVALID_PARAM` for every action; `isShowResult`/`isBackToApp` accept booleans only. Android: `open` uses the current Activity, `getBalance`/`getAccountInfo` work without an Activity. iOS: opens from the top-most screen, `close()` closes the Miniapp itself, calling `init` again with the same keys keeps the instance. Exported types (`PayMEOpeningParam`, `PayMEErrorEvent`…), `PayMEErrorCode`, `addErrorListener` / `addResponseListener`; `ipnUrl` optional. `INVALID_PARAM` and `PAYME_NOT_INITIALIZED` behave the same on both platforms (previously iOS crashed before `init`, and Android ignored calls or opened the wallet when `data` was missing) |
 | 3.0.0 | `identityToken` replaces the phone number; iOS `PayME-Miniapp` 0.8.1, Android `native-android` 0.8.2 (SDK 1.0.24) |
 | 2.0.0 | iOS `PayME-Miniapp` 0.7.6, Android `native-android` 0.7.2; phone-number identification |
 
