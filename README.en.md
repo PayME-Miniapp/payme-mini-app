@@ -4,7 +4,7 @@
 
 A React Native library that opens PayME Miniapp (wallet, payment, top-up, withdrawal, transfer, eKYC) in your app on iOS and Android.
 
-Current version: **3.0.1**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.8.3, Android `native-android` 0.8.4), so your app does not need to declare them.
+Current version: **3.0.2**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.8.3, Android `native-android` 0.8.5), so your app does not need to declare them.
 
 ## Contents
 
@@ -29,7 +29,7 @@ Current version: **3.0.1**. The library already bundles the native SDKs (iOS `Pa
 ## Installation
 
 ```sh
-npm install payme-mini-app@^3.0.1
+npm install payme-mini-app@^3.0.2
 ```
 
 ### iOS
@@ -150,6 +150,25 @@ In Xcode, open your app target → **Signing & Capabilities** → **+ Capability
 
 No permissions to declare. The SDK already includes the permissions it needs, and Miniapp requests them when needed.
 
+- **Duplicate namespace (AGP 9).** The SDK uses two LiteRT libraries that share the namespace `org.tensorflow.lite.support`. If the build reports `Namespace ... is used in multiple modules`, add to `android/gradle.properties`:
+
+  ```properties
+  android.uniquePackageNames=false
+  ```
+
+- **networkSecurityConfig.** Miniapp runs on `http://localhost`, so the SDK declares a `networkSecurityConfig` that only allows cleartext to `localhost`. Your app's `android:usesCleartextTraffic` then no longer applies. If your app has its own `networkSecurityConfig`, add `tools:replace="android:networkSecurityConfig"` to `<application>` and allow cleartext to `localhost` in your file.
+- **Debug on an emulator.** The debug build loads the JS bundle from Metro through `10.0.2.2`. Add a debug-only `android/app/src/debug/res/xml/payme_miniapp_network_security_config.xml`:
+
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <network-security-config>
+      <domain-config cleartextTrafficPermitted="true">
+          <domain>localhost</domain>
+          <domain>10.0.2.2</domain>
+      </domain-config>
+  </network-security-config>
+  ```
+
 ## Quick start
 
 ```tsx
@@ -181,7 +200,7 @@ export function openWallet(identityToken: string) {
 `identityToken` is a string PayME issues for each of your users. Your app passes it every time it opens Miniapp.
 
 1. Your app calls your server.
-2. Your server calls PayME's `identityToken/init` API with the user's phone number (contact PayME for the API docs). Do not call this API from the app.
+2. Your server calls PayME's `token-init` API (`POST /be/ewallet/sdk/token-init`) with the user's phone number (contact PayME for the API docs). Do not call this API from the app.
 3. Your app passes the returned `identityToken` to `open`, `getBalance` or `getAccountInfo`.
 
 | Action / function | `identityToken` |
@@ -354,14 +373,14 @@ Version 3.x replaces the phone number with `identityToken` and is not backward c
 | `getBalance(phone)` | `getBalance(identityToken)` |
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
-1. Server: integrate the `identityToken/init` API (contact PayME).
-2. `npm install payme-mini-app@^3.0.1`, then `cd ios && pod install`.
+1. Server: integrate the `token-init` API (contact PayME).
+2. `npm install payme-mini-app@^3.0.2`, then `cd ios && pod install`.
 3. Replace every `phone` with `identityToken`.
 4. Handle the `401` and `IDENTITY_TOKEN_REQUIRED` errors.
 5. Build iOS with Xcode 26.2 or later.
 
 ## Support
 
-PayME Technology Corporation, email [hotro@payme.vn](mailto:hotro@payme.vn). For the key set, the `identityToken/init` API docs and the API for creating `PAYMENT` transactions, contact PayME.
+PayME Technology Corporation, email [hotro@payme.vn](mailto:hotro@payme.vn). For the key set, the `token-init` API docs and the API for creating `PAYMENT` transactions, contact PayME.
 
 Version list: [npm `payme-mini-app`](https://www.npmjs.com/package/payme-mini-app?activeTab=versions).

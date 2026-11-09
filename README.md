@@ -4,7 +4,7 @@
 
 Thư viện React Native để mở PayME Miniapp (ví, thanh toán, nạp, rút, chuyển tiền, eKYC) trong ứng dụng của bạn trên iOS và Android.
 
-Phiên bản hiện tại: **3.0.1**. Thư viện đã kèm SDK native (iOS `PayME-Miniapp` 0.8.3, Android `native-android` 0.8.4), ứng dụng không cần khai báo thêm.
+Phiên bản hiện tại: **3.0.2**. Thư viện đã kèm SDK native (iOS `PayME-Miniapp` 0.8.3, Android `native-android` 0.8.5), ứng dụng không cần khai báo thêm.
 
 ## Mục lục
 
@@ -29,7 +29,7 @@ Phiên bản hiện tại: **3.0.1**. Thư viện đã kèm SDK native (iOS `Pay
 ## Cài đặt
 
 ```sh
-npm install payme-mini-app@^3.0.1
+npm install payme-mini-app@^3.0.2
 ```
 
 ### iOS
@@ -150,6 +150,25 @@ Trong Xcode, vào target ứng dụng → **Signing & Capabilities** → **+ Cap
 
 Không cần khai báo quyền. Các quyền cần thiết đã có sẵn trong SDK, Miniapp tự xin quyền khi cần.
 
+- **Trùng namespace (AGP 9).** SDK dùng hai thư viện LiteRT cùng namespace `org.tensorflow.lite.support`. Nếu build báo `Namespace ... is used in multiple modules`, thêm vào `android/gradle.properties`:
+
+  ```properties
+  android.uniquePackageNames=false
+  ```
+
+- **networkSecurityConfig.** Miniapp chạy trên `http://localhost`, nên SDK khai báo `networkSecurityConfig` chỉ cho phép cleartext tới `localhost`. Khi đó `android:usesCleartextTraffic` của ứng dụng không còn tác dụng. Nếu ứng dụng có `networkSecurityConfig` riêng, thêm `tools:replace="android:networkSecurityConfig"` vào `<application>` và cho phép cleartext tới `localhost` trong file của bạn.
+- **Debug trên emulator.** Bản debug tải JS bundle từ Metro qua `10.0.2.2`. Thêm file chỉ cho debug `android/app/src/debug/res/xml/payme_miniapp_network_security_config.xml`:
+
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <network-security-config>
+      <domain-config cleartextTrafficPermitted="true">
+          <domain>localhost</domain>
+          <domain>10.0.2.2</domain>
+      </domain-config>
+  </network-security-config>
+  ```
+
 ## Bắt đầu nhanh
 
 ```tsx
@@ -181,7 +200,7 @@ export function openWallet(identityToken: string) {
 `identityToken` là chuỗi PayME cấp cho từng người dùng của bạn. Ứng dụng truyền chuỗi này mỗi lần mở Miniapp.
 
 1. Ứng dụng gọi server của bạn.
-2. Server của bạn gọi API `identityToken/init` của PayME với số điện thoại của người dùng (liên hệ PayME để nhận tài liệu API). Không gọi API này từ ứng dụng.
+2. Server của bạn gọi API `token-init` của PayME (`POST /be/ewallet/sdk/token-init`) với số điện thoại của người dùng (liên hệ PayME để nhận tài liệu API). Không gọi API này từ ứng dụng.
 3. Ứng dụng truyền `identityToken` nhận được vào `open`, `getBalance` hoặc `getAccountInfo`.
 
 | Action / hàm | `identityToken` |
@@ -354,14 +373,14 @@ Bản 3.x thay số điện thoại bằng `identityToken` và không tương th
 | `getBalance(phone)` | `getBalance(identityToken)` |
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
-1. Server: tích hợp API `identityToken/init` (liên hệ PayME).
-2. `npm install payme-mini-app@^3.0.1`, rồi `cd ios && pod install`.
+1. Server: tích hợp API `token-init` (liên hệ PayME).
+2. `npm install payme-mini-app@^3.0.2`, rồi `cd ios && pod install`.
 3. Thay mọi `phone` bằng `identityToken`.
 4. Xử lý lỗi `401` và `IDENTITY_TOKEN_REQUIRED`.
 5. Build iOS bằng Xcode 26.2 trở lên.
 
 ## Hỗ trợ
 
-PayME Technology Corporation, email [hotro@payme.vn](mailto:hotro@payme.vn). Bộ key, tài liệu API `identityToken/init` và API tạo giao dịch `PAYMENT`: liên hệ PayME.
+PayME Technology Corporation, email [hotro@payme.vn](mailto:hotro@payme.vn). Bộ key, tài liệu API `token-init` và API tạo giao dịch `PAYMENT`: liên hệ PayME.
 
 Danh sách phiên bản: [npm `payme-mini-app`](https://www.npmjs.com/package/payme-mini-app?activeTab=versions).
