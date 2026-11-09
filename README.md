@@ -186,7 +186,6 @@ export function openWallet(identityToken: string) {
 
 | Action / hàm | `identityToken` |
 | --- | --- |
-| `PAYME` | Không dùng (người dùng tự đăng nhập) |
 | `PAYMENT` | Tuỳ chọn. Có thì người dùng trả được bằng ví PayME; không có thì thanh toán như khách vãng lai (thẻ, QR) |
 | Các action còn lại, `getBalance`, `getAccountInfo` | Bắt buộc |
 
@@ -232,7 +231,6 @@ open(type, { action, identityToken?, data? })
 | `TRANSFER_QR` | Chuyển tiền tới tài khoản ngân hàng | [`PayMETransferQRParam`](#paymetransferqrparam-transfer_qr) |
 | `SERVICE` | Thanh toán dịch vụ (điện, nước, thẻ…) | [`PayMEServiceParam`](#paymeserviceparam-service) |
 | `DEPOSIT`, `WITHDRAW`, `TRANSFER` | Nạp, rút, chuyển tiền | [`PayMEPayParam`](#paymepayparam-deposit-withdraw-transfer) |
-| `PAYME` | Toàn bộ ví PayME, người dùng tự đăng nhập | Không có |
 
 ```ts
 open('screen', {
@@ -353,13 +351,12 @@ Bản 3.x thay số điện thoại bằng `identityToken` và không tương th
 | 2.x | 3.x |
 | --- | --- |
 | `open(type, { action, phone, data })` | `open(type, { action, identityToken, data })` |
-| `open('screen', { action: 'PAYME', phone })` | `open('screen', { action: 'PAYME' })` |
 | `getBalance(phone)` | `getBalance(identityToken)` |
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
 1. Server: tích hợp API `identityToken/init` (liên hệ PayME).
 2. `npm install payme-mini-app@^3.0.1`, rồi `cd ios && pod install`.
-3. Thay mọi `phone` bằng `identityToken`; bỏ `phone` ở action `PAYME`.
+3. Thay mọi `phone` bằng `identityToken`.
 4. Xử lý lỗi `401` và `IDENTITY_TOKEN_REQUIRED`.
 5. Build iOS bằng Xcode 26.2 trở lên.
 

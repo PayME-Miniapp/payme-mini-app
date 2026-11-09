@@ -186,7 +186,6 @@ export function openWallet(identityToken: string) {
 
 | Action / function | `identityToken` |
 | --- | --- |
-| `PAYME` | Not used (the user signs in themselves) |
 | `PAYMENT` | Optional. With it, the user can pay with their PayME wallet; without it, they pay as a guest (card, QR) |
 | Other actions, `getBalance`, `getAccountInfo` | Required |
 
@@ -232,7 +231,6 @@ open(type, { action, identityToken?, data? })
 | `TRANSFER_QR` | Transfer money to a bank account | [`PayMETransferQRParam`](#paymetransferqrparam-transfer_qr) |
 | `SERVICE` | Pay for services (electricity, water, cards…) | [`PayMEServiceParam`](#paymeserviceparam-service) |
 | `DEPOSIT`, `WITHDRAW`, `TRANSFER` | Top up, withdraw, transfer | [`PayMEPayParam`](#paymepayparam-deposit-withdraw-transfer) |
-| `PAYME` | The full PayME wallet; the user signs in themselves | None |
 
 ```ts
 open('screen', {
@@ -353,13 +351,12 @@ Version 3.x replaces the phone number with `identityToken` and is not backward c
 | 2.x | 3.x |
 | --- | --- |
 | `open(type, { action, phone, data })` | `open(type, { action, identityToken, data })` |
-| `open('screen', { action: 'PAYME', phone })` | `open('screen', { action: 'PAYME' })` |
 | `getBalance(phone)` | `getBalance(identityToken)` |
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
 1. Server: integrate the `identityToken/init` API (contact PayME).
 2. `npm install payme-mini-app@^3.0.1`, then `cd ios && pod install`.
-3. Replace every `phone` with `identityToken`; drop `phone` from the `PAYME` action.
+3. Replace every `phone` with `identityToken`.
 4. Handle the `401` and `IDENTITY_TOKEN_REQUIRED` errors.
 5. Build iOS with Xcode 26.2 or later.
 
