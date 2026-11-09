@@ -4,7 +4,7 @@
 
 A React Native library that opens PayME Miniapp (wallet, payment, top-up, withdrawal, transfer, eKYC) in your app on iOS and Android.
 
-Current version: **3.0.2**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.8.3, Android `native-android` 0.8.5), so your app does not need to declare them.
+Current version: **3.0.3**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.8.4, Android `native-android` 0.8.5), so your app does not need to declare them.
 
 ## Contents
 
@@ -29,7 +29,7 @@ Current version: **3.0.2**. The library already bundles the native SDKs (iOS `Pa
 ## Installation
 
 ```sh
-npm install payme-mini-app@^3.0.2
+npm install payme-mini-app@^3.0.3
 ```
 
 ### iOS
@@ -374,7 +374,7 @@ Version 3.x replaces the phone number with `identityToken` and is not backward c
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
 1. Server: integrate the `token-init` API (contact PayME).
-2. `npm install payme-mini-app@^3.0.2`, then `cd ios && pod install`.
+2. `npm install payme-mini-app@^3.0.3`, then `cd ios && pod install`.
 3. Replace every `phone` with `identityToken`.
 4. Handle the `401` and `IDENTITY_TOKEN_REQUIRED` errors.
 5. Build iOS with Xcode 26.2 or later.

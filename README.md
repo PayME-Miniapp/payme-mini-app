@@ -4,7 +4,7 @@
 
 Thư viện React Native để mở PayME Miniapp (ví, thanh toán, nạp, rút, chuyển tiền, eKYC) trong ứng dụng của bạn trên iOS và Android.
 
-Phiên bản hiện tại: **3.0.2**. Thư viện đã kèm SDK native (iOS `PayME-Miniapp` 0.8.3, Android `native-android` 0.8.5), ứng dụng không cần khai báo thêm.
+Phiên bản hiện tại: **3.0.3**. Thư viện đã kèm SDK native (iOS `PayME-Miniapp` 0.8.4, Android `native-android` 0.8.5), ứng dụng không cần khai báo thêm.
 
 ## Mục lục
 
@@ -29,7 +29,7 @@ Phiên bản hiện tại: **3.0.2**. Thư viện đã kèm SDK native (iOS `Pay
 ## Cài đặt
 
 ```sh
-npm install payme-mini-app@^3.0.2
+npm install payme-mini-app@^3.0.3
 ```
 
 ### iOS
@@ -374,7 +374,7 @@ Bản 3.x thay số điện thoại bằng `identityToken` và không tương th
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
 1. Server: tích hợp API `token-init` (liên hệ PayME).
-2. `npm install payme-mini-app@^3.0.2`, rồi `cd ios && pod install`.
+2. `npm install payme-mini-app@^3.0.3`, rồi `cd ios && pod install`.
 3. Thay mọi `phone` bằng `identityToken`.
 4. Xử lý lỗi `401` và `IDENTITY_TOKEN_REQUIRED`.
 5. Build iOS bằng Xcode 26.2 trở lên.
