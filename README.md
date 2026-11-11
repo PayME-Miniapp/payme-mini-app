@@ -4,7 +4,7 @@
 
 Thư viện React Native để mở PayME Miniapp (ví, thanh toán, nạp, rút, chuyển tiền, eKYC) trong ứng dụng của bạn trên iOS và Android.
 
-Phiên bản hiện tại: **3.1.0**. Thư viện đã kèm SDK native (iOS `PayME-Miniapp` 0.9.0, Android `native-android` 0.9.0), ứng dụng không cần khai báo thêm.
+Phiên bản hiện tại: **3.1.1**. Thư viện đã kèm SDK native (iOS `PayME-Miniapp` 0.9.1, Android `native-android` 0.9.0), ứng dụng không cần khai báo thêm. Bản 3.1.1: trên iOS bàn phím tự bật khi Miniapp mở ô nhập PIN/OTP.
 
 > **Bắt buộc nâng nếu dùng eKYC:** 3.0.0–3.0.3 (Android `native-android` 0.8.x trước 0.8.6) gây crash `NoSuchMethodError: extractCameraCharacteristics` khi mở camera eKYC (SDK dùng CameraX 1.6, không tương thích thư viện eKYC Kalapa). Nâng lên 3.0.4 trở lên. Nếu ứng dụng tự khai báo CameraX (`androidx.camera:*`), dùng bản `1.5.x` (khuyến nghị `1.5.3`), không dùng `1.6.x`.
 
@@ -31,7 +31,7 @@ Phiên bản hiện tại: **3.1.0**. Thư viện đã kèm SDK native (iOS `Pay
 ## Cài đặt
 
 ```sh
-npm install payme-mini-app@^3.1.0
+npm install payme-mini-app@^3.1.1
 ```
 
 ### iOS
@@ -375,7 +375,7 @@ Bản 3.x thay số điện thoại bằng `identityToken` và không tương th
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
 1. Server: tích hợp API `token-init` (liên hệ PayME).
-2. `npm install payme-mini-app@^3.1.0`, rồi `cd ios && pod install`.
+2. `npm install payme-mini-app@^3.1.1`, rồi `cd ios && pod install`.
 3. Thay mọi `phone` bằng `identityToken`.
 4. Xử lý lỗi `401` và `IDENTITY_TOKEN_REQUIRED`.
 5. Build iOS bằng Xcode 26.2 trở lên.
