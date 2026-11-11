@@ -4,7 +4,7 @@
 
 A React Native library that opens PayME Miniapp (wallet, payment, top-up, withdrawal, transfer, eKYC) in your app on iOS and Android.
 
-Current version: **3.0.5**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.8.5, Android `native-android` 0.8.7), so your app does not need to declare them.
+Current version: **3.1.0**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.9.0, Android `native-android` 0.9.0), so your app does not need to declare them.
 
 > **Required upgrade if you use eKYC:** 3.0.0–3.0.3 (Android `native-android` 0.8.x before 0.8.6) crash with `NoSuchMethodError: extractCameraCharacteristics` when the eKYC camera opens (the SDK used CameraX 1.6, which the Kalapa eKYC library does not support). Upgrade to 3.0.4 or later. If your app declares CameraX (`androidx.camera:*`) itself, use `1.5.x` (`1.5.3` recommended), not `1.6.x`.
 
@@ -17,21 +17,21 @@ Current version: **3.0.5**. The library already bundles the native SDKs (iOS `Pa
 5. [identityToken](#identitytoken)
 6. [API](#api)
 7. [Error codes](#error-codes)
-8. [Upgrading from 2.x](#upgrading-from-2x)
-9. [Support](#support)
+8. [Upgrading to 3.1.0](#upgrading-to-310)
+9. [Upgrading from 2.x](#upgrading-from-2x)
+10. [Support](#support)
 
 ## Requirements
 
 - React Native 0.71 or later.
 - iOS 13.0 or later (or your React Native version's minimum, if higher), built with Xcode 26.2 or later. Building with Xcode 27 needs the `post_install` block in [iOS installation](#ios).
 - Android `minSdkVersion` 26, `compileSdkVersion` 37.
-- An `appId`, `publicKey`, `privateKey` key set issued by PayME.
-- Your server can call PayME's `identityToken` API.
+- Your server can call PayME's `identityToken` API (with the key set PayME issues for your server).
 
 ## Installation
 
 ```sh
-npm install payme-mini-app@^3.0.5
+npm install payme-mini-app@^3.1.0
 ```
 
 ### iOS
@@ -175,16 +175,16 @@ No permissions to declare. The SDK already includes the permissions it needs, an
 
 ```tsx
 import { useEffect } from 'react';
-import { addErrorListener, addResponseListener, init, open } from 'payme-mini-app';
+import { addErrorListener, addResponseListener, initialize, open } from 'payme-mini-app';
 
 export function usePayME() {
   useEffect(() => {
-    // Register listeners before init/open: on iOS, events emitted with no listener are dropped.
+    // Register listeners before initialize/open: on iOS, events emitted with no listener are dropped.
     const subs = [
       addResponseListener((e) => console.log('PayME response', e.action)),
       addErrorListener((e) => console.log('PayME error', e.action, e.code, e.description)),
     ];
-    init('<APP_ID>', '<PUBLIC_KEY>', '<PRIVATE_KEY>', 'vi', 'SANDBOX');
+    initialize({ locale: 'vi', env: 'SANDBOX' });
     return () => subs.forEach((s) => s.remove());
   }, []);
 }
@@ -194,8 +194,6 @@ export function openWallet(identityToken: string) {
   open('modal', { action: 'OPEN', identityToken });
 }
 ```
-
-> Do not put real keys in public source code. Write `publicKey` and `privateKey` on one line, without line breaks (for example `-----BEGIN PUBLIC KEY-----MFww...-----END PUBLIC KEY-----`).
 
 ## identityToken
 
@@ -218,22 +216,19 @@ export function openWallet(identityToken: string) {
 
 All functions return `void`. Results and errors come back through the `onResponse` and `onError` events.
 
-### init
+### initialize
 
 ```ts
-init(appId, publicKey, privateKey, locale?, env?, mode?)
+initialize({ locale?, env?, mode? })
 ```
 
 | Parameter | Description |
 | --- | --- |
-| `appId` | App ID issued by PayME |
-| `publicKey` | PayME's public key |
-| `privateKey` | Your app's private key |
 | `locale` | `'vi'` (default) or `'en'` |
 | `env` | `'PRODUCTION'` (default), `'SANDBOX'` or `'STAGING'` |
 | `mode` | Usually not needed. Defaults to `'miniapp_sandbox'` when `env` is `SANDBOX`, otherwise `'miniapp_product'` |
 
-Call `init` once, before any other function. Calling another function before `init` gives the `PAYME_NOT_INITIALIZED` error.
+Call `initialize` once, before any other function. Calling another function before `initialize` gives the `PAYME_NOT_INITIALIZED` error. Your app does not pass any key: the SDK has it built in.
 
 ### open
 
@@ -359,11 +354,15 @@ The `PayMEErrorCode` constant holds common error codes for comparison, for examp
 | `401` | `identityToken` is invalid or expired | Get a new `identityToken` and call again |
 | `IDENTITY_TOKEN_REQUIRED` | `identityToken` is missing | Pass `identityToken` |
 | `INVALID_PARAM` | Invalid `open` parameters | Fix the parameters using the table in [open](#open) |
-| `PAYME_NOT_INITIALIZED` | `init` was not called | Call `init` first |
+| `PAYME_NOT_INITIALIZED` | `initialize` was not called | Call `initialize` first |
 | `USER_CANCEL` | The user closed Miniapp | Not an error |
 | `MINIAPP_ALREADY_OPEN` | A Miniapp is already open | Wait for it to close, or call `close()` first |
 | `MINIAPP_CANNOT_PRESENT` | Miniapp could not be shown | Call `open` while your app is in the foreground |
 | Other codes | Network, server or business error | Show `description` and retry; contact PayME if it keeps happening |
+
+## Upgrading to 3.1.0
+
+Replace `init(appId, publicKey, privateKey, locale, env, mode)` with `initialize({ locale, env, mode })`. The old `init` still works (deprecated) and ignores the keys.
 
 ## Upgrading from 2.x
 
@@ -376,13 +375,13 @@ Version 3.x replaces the phone number with `identityToken` and is not backward c
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
 1. Server: integrate the `token-init` API (contact PayME).
-2. `npm install payme-mini-app@^3.0.5`, then `cd ios && pod install`.
+2. `npm install payme-mini-app@^3.1.0`, then `cd ios && pod install`.
 3. Replace every `phone` with `identityToken`.
 4. Handle the `401` and `IDENTITY_TOKEN_REQUIRED` errors.
 5. Build iOS with Xcode 26.2 or later.
 
 ## Support
 
-PayME Technology Corporation, email [hotro@payme.vn](mailto:hotro@payme.vn). For the key set, the `token-init` API docs and the API for creating `PAYMENT` transactions, contact PayME.
+PayME Technology Corporation, email [hotro@payme.vn](mailto:hotro@payme.vn). For the server key set, the `token-init` API docs and the API for creating `PAYMENT` transactions, contact PayME.
 
 Version list: [npm `payme-mini-app`](https://www.npmjs.com/package/payme-mini-app?activeTab=versions).
