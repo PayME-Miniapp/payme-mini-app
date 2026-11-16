@@ -123,8 +123,6 @@ Thêm vào `Info.plist` (sửa câu mô tả theo ứng dụng của bạn):
 <string>Ứng dụng cần truy cập thư viện ảnh để chọn mã thanh toán</string>
 <key>NSPhotoLibraryAddUsageDescription</key>
 <string>Ứng dụng cần lưu mã thanh toán vào thư viện ảnh</string>
-<key>NSContactsUsageDescription</key>
-<string>Cho phép truy cập danh bạ để chọn nhanh số điện thoại</string>
 <key>NSFaceIDUsageDescription</key>
 <string>Dùng Face ID để xác thực nhanh và an toàn</string>
 <!-- Đọc chip CCCD khi eKYC -->
@@ -144,6 +142,8 @@ Thêm vào `Info.plist` (sửa câu mô tả theo ứng dụng của bạn):
 </dict>
 ```
 
+Chọn số điện thoại từ danh bạ dùng bộ chọn của hệ thống nên không cần `NSContactsUsageDescription` (bản 3.1.1 trở về trước vẫn cần).
+
 Trong Xcode, vào target ứng dụng → **Signing & Capabilities** → **+ Capability** → thêm **Near Field Communication Tag Reading**.
 
 ![Near Field Communication Tag Reading](documents/capabilities2.png)
@@ -151,6 +151,12 @@ Trong Xcode, vào target ứng dụng → **Signing & Capabilities** → **+ Cap
 ### Android
 
 Không cần khai báo quyền. Các quyền cần thiết đã có sẵn trong SDK, Miniapp tự xin quyền khi cần.
+
+- **Danh bạ.** SDK không khai báo `READ_CONTACTS`: chọn số dùng bộ chọn danh bạ của hệ thống, đáp ứng chính sách Google Play cho ứng dụng target Android 17. Bản 3.1.1 trở về trước còn khai báo quyền này; muốn bỏ thì thêm vào `AndroidManifest.xml` của ứng dụng (khi đó Miniapp chỉ gợi ý các số đã nạp gần đây):
+
+  ```xml
+  <uses-permission android:name="android.permission.READ_CONTACTS" tools:node="remove" />
+  ```
 
 - **Trùng namespace (AGP 9).** SDK dùng hai thư viện LiteRT cùng namespace `org.tensorflow.lite.support`. Nếu build báo `Namespace ... is used in multiple modules`, thêm vào `android/gradle.properties`:
 

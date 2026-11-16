@@ -123,8 +123,6 @@ Add to `Info.plist` (adjust the descriptions to fit your app):
 <string>The app needs access to your photo library to choose a payment code</string>
 <key>NSPhotoLibraryAddUsageDescription</key>
 <string>The app needs to save payment codes to your photo library</string>
-<key>NSContactsUsageDescription</key>
-<string>Allow access to contacts to pick phone numbers quickly</string>
 <key>NSFaceIDUsageDescription</key>
 <string>Use Face ID for fast and secure authentication</string>
 <!-- Read the citizen ID card chip during eKYC -->
@@ -144,6 +142,8 @@ Add to `Info.plist` (adjust the descriptions to fit your app):
 </dict>
 ```
 
+Picking a phone number from contacts uses the system contact picker, so `NSContactsUsageDescription` is not needed (3.1.1 and earlier still need it).
+
 In Xcode, open your app target → **Signing & Capabilities** → **+ Capability** → add **Near Field Communication Tag Reading**.
 
 ![Near Field Communication Tag Reading](documents/capabilities2.png)
@@ -151,6 +151,12 @@ In Xcode, open your app target → **Signing & Capabilities** → **+ Capability
 ### Android
 
 No permissions to declare. The SDK already includes the permissions it needs, and Miniapp requests them when needed.
+
+- **Contacts.** The SDK does not declare `READ_CONTACTS`: picking a number uses the system contact picker, which meets the Google Play policy for apps targeting Android 17. 3.1.1 and earlier still declare it; to drop it, add this to your app's `AndroidManifest.xml` (Miniapp then only suggests recently topped-up numbers):
+
+  ```xml
+  <uses-permission android:name="android.permission.READ_CONTACTS" tools:node="remove" />
+  ```
 
 - **Duplicate namespace (AGP 9).** The SDK uses two LiteRT libraries that share the namespace `org.tensorflow.lite.support`. If the build reports `Namespace ... is used in multiple modules`, add to `android/gradle.properties`:
 
