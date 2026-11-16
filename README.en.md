@@ -4,7 +4,7 @@
 
 A React Native library that opens PayME Miniapp (wallet, payment, top-up, withdrawal, transfer, eKYC) in your app on iOS and Android.
 
-Current version: **3.1.1**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.9.1, Android `native-android` 0.9.0), so your app does not need to declare them. 3.1.1: on iOS the keyboard opens by itself when the Miniapp shows a PIN/OTP input.
+Current version: **3.2.0**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.10.0, Android `native-android` 0.10.0), so your app does not need to declare them. 3.2.0: phone numbers are picked with the system contact picker, no contacts permission.
 
 > **Required upgrade if you use eKYC:** 3.0.0–3.0.3 (Android `native-android` 0.8.x before 0.8.6) crash with `NoSuchMethodError: extractCameraCharacteristics` when the eKYC camera opens (the SDK used CameraX 1.6, which the Kalapa eKYC library does not support). Upgrade to 3.0.4 or later. If your app declares CameraX (`androidx.camera:*`) itself, use `1.5.x` (`1.5.3` recommended), not `1.6.x`.
 
@@ -17,9 +17,10 @@ Current version: **3.1.1**. The library already bundles the native SDKs (iOS `Pa
 5. [identityToken](#identitytoken)
 6. [API](#api)
 7. [Error codes](#error-codes)
-8. [Upgrading to 3.1.0](#upgrading-to-310)
-9. [Upgrading from 2.x](#upgrading-from-2x)
-10. [Support](#support)
+8. [Upgrading to 3.2.0](#upgrading-to-320)
+9. [Upgrading to 3.1.0](#upgrading-to-310)
+10. [Upgrading from 2.x](#upgrading-from-2x)
+11. [Support](#support)
 
 ## Requirements
 
@@ -31,7 +32,7 @@ Current version: **3.1.1**. The library already bundles the native SDKs (iOS `Pa
 ## Installation
 
 ```sh
-npm install payme-mini-app@^3.1.1
+npm install payme-mini-app@^3.2.0
 ```
 
 ### iOS
@@ -366,6 +367,10 @@ The `PayMEErrorCode` constant holds common error codes for comparison, for examp
 | `MINIAPP_CANNOT_PRESENT` | Miniapp could not be shown | Call `open` while your app is in the foreground |
 | Other codes | Network, server or business error | Show `description` and retry; contact PayME if it keeps happening |
 
+## Upgrading to 3.2.0
+
+No API change. Picking a phone number for top-up uses the system contact picker: the Android SDK no longer declares `READ_CONTACTS` and the iOS SDK does not read contacts. You can remove `NSContactsUsageDescription` from `Info.plist`, and the `tools:node="remove"` line for `READ_CONTACTS` if you added it.
+
 ## Upgrading to 3.1.0
 
 Replace `init(appId, publicKey, privateKey, locale, env, mode)` with `initialize({ locale, env, mode })`. The old `init` still works (deprecated) and ignores the keys.
@@ -381,7 +386,7 @@ Version 3.x replaces the phone number with `identityToken` and is not backward c
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
 1. Server: integrate the `token-init` API (contact PayME).
-2. `npm install payme-mini-app@^3.1.1`, then `cd ios && pod install`.
+2. `npm install payme-mini-app@^3.2.0`, then `cd ios && pod install`.
 3. Replace every `phone` with `identityToken`.
 4. Handle the `401` and `IDENTITY_TOKEN_REQUIRED` errors.
 5. Build iOS with Xcode 26.2 or later.

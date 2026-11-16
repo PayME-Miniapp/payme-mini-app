@@ -4,7 +4,7 @@
 
 Thư viện React Native để mở PayME Miniapp (ví, thanh toán, nạp, rút, chuyển tiền, eKYC) trong ứng dụng của bạn trên iOS và Android.
 
-Phiên bản hiện tại: **3.1.1**. Thư viện đã kèm SDK native (iOS `PayME-Miniapp` 0.9.1, Android `native-android` 0.9.0), ứng dụng không cần khai báo thêm. Bản 3.1.1: trên iOS bàn phím tự bật khi Miniapp mở ô nhập PIN/OTP.
+Phiên bản hiện tại: **3.2.0**. Thư viện đã kèm SDK native (iOS `PayME-Miniapp` 0.10.0, Android `native-android` 0.10.0), ứng dụng không cần khai báo thêm. Bản 3.2.0: chọn số từ danh bạ bằng bộ chọn của hệ thống, không cần quyền danh bạ.
 
 > **Bắt buộc nâng nếu dùng eKYC:** 3.0.0–3.0.3 (Android `native-android` 0.8.x trước 0.8.6) gây crash `NoSuchMethodError: extractCameraCharacteristics` khi mở camera eKYC (SDK dùng CameraX 1.6, không tương thích thư viện eKYC Kalapa). Nâng lên 3.0.4 trở lên. Nếu ứng dụng tự khai báo CameraX (`androidx.camera:*`), dùng bản `1.5.x` (khuyến nghị `1.5.3`), không dùng `1.6.x`.
 
@@ -17,9 +17,10 @@ Phiên bản hiện tại: **3.1.1**. Thư viện đã kèm SDK native (iOS `Pay
 5. [identityToken](#identitytoken)
 6. [API](#api)
 7. [Mã lỗi](#mã-lỗi)
-8. [Nâng cấp lên 3.1.0](#nâng-cấp-lên-310)
-9. [Nâng cấp từ 2.x](#nâng-cấp-từ-2x)
-10. [Hỗ trợ](#hỗ-trợ)
+8. [Nâng cấp lên 3.2.0](#nâng-cấp-lên-320)
+9. [Nâng cấp lên 3.1.0](#nâng-cấp-lên-310)
+10. [Nâng cấp từ 2.x](#nâng-cấp-từ-2x)
+11. [Hỗ trợ](#hỗ-trợ)
 
 ## Yêu cầu
 
@@ -31,7 +32,7 @@ Phiên bản hiện tại: **3.1.1**. Thư viện đã kèm SDK native (iOS `Pay
 ## Cài đặt
 
 ```sh
-npm install payme-mini-app@^3.1.1
+npm install payme-mini-app@^3.2.0
 ```
 
 ### iOS
@@ -366,6 +367,10 @@ Hằng `PayMEErrorCode` chứa các mã lỗi thường gặp để so sánh, v�
 | `MINIAPP_CANNOT_PRESENT` | Không hiển thị được Miniapp | Gọi `open` khi ứng dụng đang ở foreground |
 | Mã khác | Lỗi mạng, máy chủ hoặc nghiệp vụ | Hiển thị `description`, thử lại; liên hệ PayME nếu lặp lại |
 
+## Nâng cấp lên 3.2.0
+
+Không đổi API. Chọn số điện thoại khi nạp tiền dùng bộ chọn danh bạ của hệ thống: SDK Android không còn khai báo `READ_CONTACTS`, SDK iOS không đọc danh bạ. Có thể bỏ `NSContactsUsageDescription` khỏi `Info.plist`, và bỏ dòng `tools:node="remove"` cho `READ_CONTACTS` nếu đã thêm.
+
 ## Nâng cấp lên 3.1.0
 
 Đổi `init(appId, publicKey, privateKey, locale, env, mode)` thành `initialize({ locale, env, mode })`. `init` cũ vẫn chạy (deprecated) và bỏ qua key truyền vào.
@@ -381,7 +386,7 @@ Bản 3.x thay số điện thoại bằng `identityToken` và không tương th
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
 1. Server: tích hợp API `token-init` (liên hệ PayME).
-2. `npm install payme-mini-app@^3.1.1`, rồi `cd ios && pod install`.
+2. `npm install payme-mini-app@^3.2.0`, rồi `cd ios && pod install`.
 3. Thay mọi `phone` bằng `identityToken`.
 4. Xử lý lỗi `401` và `IDENTITY_TOKEN_REQUIRED`.
 5. Build iOS bằng Xcode 26.2 trở lên.
