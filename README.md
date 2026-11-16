@@ -152,7 +152,7 @@ Trong Xcode, vào target ứng dụng → **Signing & Capabilities** → **+ Cap
 
 Không cần khai báo quyền. Các quyền cần thiết đã có sẵn trong SDK, Miniapp tự xin quyền khi cần.
 
-- **Danh bạ.** SDK không khai báo `READ_CONTACTS`: chọn số dùng bộ chọn danh bạ của hệ thống, đáp ứng chính sách Google Play cho ứng dụng target Android 17. Bản 3.1.1 trở về trước còn khai báo quyền này; muốn bỏ thì thêm vào `AndroidManifest.xml` của ứng dụng (khi đó Miniapp chỉ gợi ý các số đã nạp gần đây):
+- **Danh bạ.** SDK không khai báo `READ_CONTACTS`: chọn số dùng bộ chọn danh bạ của hệ thống, đáp ứng chính sách Google Play cho ứng dụng target Android 17. Bản 3.1.1 trở về trước còn khai báo quyền này; muốn bỏ thì thêm vào `AndroidManifest.xml` của ứng dụng (thẻ `<manifest>` cần có `xmlns:tools="http://schemas.android.com/tools"`). Khi đó nút danh bạ ở màn nạp điện thoại báo chưa được cấp quyền; mục số đã nạp gần đây vẫn dùng được:
 
   ```xml
   <uses-permission android:name="android.permission.READ_CONTACTS" tools:node="remove" />

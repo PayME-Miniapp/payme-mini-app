@@ -152,7 +152,7 @@ In Xcode, open your app target → **Signing & Capabilities** → **+ Capability
 
 No permissions to declare. The SDK already includes the permissions it needs, and Miniapp requests them when needed.
 
-- **Contacts.** The SDK does not declare `READ_CONTACTS`: picking a number uses the system contact picker, which meets the Google Play policy for apps targeting Android 17. 3.1.1 and earlier still declare it; to drop it, add this to your app's `AndroidManifest.xml` (Miniapp then only suggests recently topped-up numbers):
+- **Contacts.** The SDK does not declare `READ_CONTACTS`: picking a number uses the system contact picker, which meets the Google Play policy for apps targeting Android 17. 3.1.1 and earlier still declare it; to drop it, add this to your app's `AndroidManifest.xml` (the `<manifest>` tag needs `xmlns:tools="http://schemas.android.com/tools"`). The contacts button on the top-up screen then reports the permission as not granted; recently topped-up numbers still work:
 
   ```xml
   <uses-permission android:name="android.permission.READ_CONTACTS" tools:node="remove" />
