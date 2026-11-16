@@ -4,7 +4,7 @@
 
 A React Native library that opens PayME Miniapp (wallet, payment, top-up, withdrawal, transfer, eKYC) in your app on iOS and Android.
 
-Current version: **3.2.1**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.10.0, Android `native-android` 0.10.1), so your app does not need to declare them. 3.2.1: on Android `getBalance` returns `linked: false` for a wallet that is not linked.
+Current version: **3.2.2**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.10.0, Android `native-android` 0.10.2), so your app does not need to declare them. 3.2.2: the Android SDK ships its R8/ProGuard rules (no rules to add when minify is on).
 
 > **Required upgrade if you use eKYC:** 3.0.0–3.0.3 (Android `native-android` 0.8.x before 0.8.6) crash with `NoSuchMethodError: extractCameraCharacteristics` when the eKYC camera opens (the SDK used CameraX 1.6, which the Kalapa eKYC library does not support). Upgrade to 3.0.4 or later. If your app declares CameraX (`androidx.camera:*`) itself, use `1.5.x` (`1.5.3` recommended), not `1.6.x`.
 
@@ -32,7 +32,7 @@ Current version: **3.2.1**. The library already bundles the native SDKs (iOS `Pa
 ## Installation
 
 ```sh
-npm install payme-mini-app@^3.2.1
+npm install payme-mini-app@^3.2.2
 ```
 
 ### iOS
@@ -96,7 +96,7 @@ cd ios && pod install
    ```
 
    If the Android Gradle Plugin says it does not support `compileSdk` 37 yet, upgrade AGP.
-3. **ProGuard.** If your release build enables `minifyEnabled`, add to `android/app/proguard-rules.pro`:
+3. **ProGuard / R8.** From 3.2.2 the SDK ships its rules; nothing to add. On 3.2.1 and earlier, if your release build enables `minifyEnabled`, add to `android/app/proguard-rules.pro`:
 
    ```proguard
    -keep class vn.kalapa.ekyc.** { *; }
@@ -386,7 +386,7 @@ Version 3.x replaces the phone number with `identityToken` and is not backward c
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
 1. Server: integrate the `token-init` API (contact PayME).
-2. `npm install payme-mini-app@^3.2.1`, then `cd ios && pod install`.
+2. `npm install payme-mini-app@^3.2.2`, then `cd ios && pod install`.
 3. Replace every `phone` with `identityToken`.
 4. Handle the `401` and `IDENTITY_TOKEN_REQUIRED` errors.
 5. Build iOS with Xcode 26.2 or later.
