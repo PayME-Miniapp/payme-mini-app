@@ -4,7 +4,7 @@
 
 A React Native library that opens PayME Miniapp (wallet, payment, top-up, withdrawal, transfer, eKYC) in your app on iOS and Android.
 
-Current version: **3.2.3**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.10.1, Android `native-android` 0.10.2), so your app does not need to declare them. 3.2.3: on iOS `getBalance` returns `linked: false` for a blank `accessToken`, like Android. Since 3.2.2 the Android SDK ships its R8/ProGuard rules (no rules to add when minify is on).
+Current version: **3.4.0**. The library already bundles the native SDKs (iOS `PayME-Miniapp` 0.15.0 inside the package, Android `native-android` 0.11.0), so your app declares nothing extra. 3.4.0: the iOS SDK no longer depends on CocoaPods trunk and only pulls in `lottie-ios` and `KalapaEkycSDK`; Mixpanel is removed. See [Upgrading to 3.4.0](#upgrading-to-340).
 
 > **Required upgrade if you use eKYC:** 3.0.0–3.0.3 (Android `native-android` 0.8.x before 0.8.6) crash with `NoSuchMethodError: extractCameraCharacteristics` when the eKYC camera opens (the SDK used CameraX 1.6, which the Kalapa eKYC library does not support). Upgrade to 3.0.4 or later. If your app declares CameraX (`androidx.camera:*`) itself, use `1.5.x` (`1.5.3` recommended), not `1.6.x`.
 
@@ -17,10 +17,11 @@ Current version: **3.2.3**. The library already bundles the native SDKs (iOS `Pa
 5. [identityToken](#identitytoken)
 6. [API](#api)
 7. [Error codes](#error-codes)
-8. [Upgrading to 3.2.0](#upgrading-to-320)
-9. [Upgrading to 3.1.0](#upgrading-to-310)
-10. [Upgrading from 2.x](#upgrading-from-2x)
-11. [Support](#support)
+8. [Upgrading to 3.4.0](#upgrading-to-340)
+9. [Upgrading to 3.2.0](#upgrading-to-320)
+10. [Upgrading to 3.1.0](#upgrading-to-310)
+11. [Upgrading from 2.x](#upgrading-from-2x)
+12. [Support](#support)
 
 ## Requirements
 
@@ -32,7 +33,7 @@ Current version: **3.2.3**. The library already bundles the native SDKs (iOS `Pa
 ## Installation
 
 ```sh
-npm install payme-mini-app@^3.2.3
+npm install payme-mini-app@^3.4.0
 ```
 
 ### iOS
@@ -46,8 +47,7 @@ target 'YourApp' do
   # ... keep use_react_native!(...) as is
 
   $dynamic_framework = [
-    'PayMEMiniApp', 'CryptoSwift', 'SwiftyRSA', 'GCDWebServer', 'NSLogger', 'lottie-ios',
-    'SwiftyJSON', 'ZIPFoundation', 'Mixpanel-swift', 'jsonlogic', 'json-enum', 'MixpanelSwiftCommon'
+    'lottie-ios'
   ]
 
   pre_install do |installer|
@@ -389,6 +389,14 @@ The `PayMEErrorCode` constant holds common error codes for comparison, for examp
 | `MINIAPP_CANNOT_PRESENT` | Miniapp could not be shown | Call `open` while your app is in the foreground |
 | Other codes | Network, server or business error | Show `description` and retry; contact PayME if it keeps happening |
 
+## Upgrading to 3.4.0
+
+1. `npm install payme-mini-app@^3.4.0`, then `cd ios && pod install --repo-update`. No extra `source` line is needed in the `Podfile`.
+2. Shorten `$dynamic_framework` in `ios/Podfile` to `['lottie-ios']` (see [Installation](#installation)); drop `'PayMEMiniApp'` if present.
+3. The iOS SDK no longer pulls in `SwiftyJSON`, `ZIPFoundation`, `NSLogger`, `Mixpanel-swift`, `CryptoSwift`, `SwiftyRSA`, `GCDWebServer`: if your app uses any of these pods itself, declare it in your `Podfile`.
+4. No JS API changes. The SDK no longer sends events to Mixpanel.
+5. iOS SDK 0.15.0 has not been tested on iOS 15–17: if your app supports those versions, try the wallet and payment flows before you ship.
+
 ## Upgrading to 3.2.0
 
 No API change. Picking a phone number for top-up uses the system contact picker: the Android SDK no longer declares `READ_CONTACTS` and the iOS SDK does not read contacts. You can remove `NSContactsUsageDescription` from `Info.plist`, and the `tools:node="remove"` line for `READ_CONTACTS` if you added it.
@@ -408,7 +416,7 @@ Version 3.x replaces the phone number with `identityToken` and is not backward c
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
 1. Server: integrate the `token-init` API (contact PayME).
-2. `npm install payme-mini-app@^3.2.3`, then `cd ios && pod install`.
+2. `npm install payme-mini-app@^3.4.0`, then `cd ios && pod install`.
 3. Replace every `phone` with `identityToken`.
 4. Handle the `401` and `IDENTITY_TOKEN_REQUIRED` errors.
 5. Build iOS with Xcode 26.2 or later.
