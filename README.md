@@ -4,7 +4,7 @@
 
 Thư viện React Native để mở PayME Miniapp (ví, thanh toán, nạp, rút, chuyển tiền, eKYC) trong ứng dụng của bạn trên iOS và Android.
 
-Phiên bản hiện tại: **3.4.0**. Thư viện đã kèm SDK native (iOS `PayME-Miniapp` 0.15.0 nằm sẵn trong gói, Android `native-android` 0.11.0), ứng dụng không cần khai báo thêm. Bản 3.4.0: SDK iOS không còn phụ thuộc CocoaPods trunk và chỉ còn kéo theo `lottie-ios`, `KalapaEkycSDK`; bỏ Mixpanel. Xem [Nâng cấp lên 3.4.0](#nâng-cấp-lên-340).
+Phiên bản hiện tại: **3.5.0**. Thư viện đã kèm SDK native (iOS `PayME-Miniapp` 0.16.0 nằm sẵn trong gói, Android `native-android` 0.11.0), ứng dụng không cần khai báo thêm và `ios/Podfile` không cần cấu hình gì cho PayME. Xem [Nâng cấp lên 3.5.0](#nâng-cấp-lên-350).
 
 > **Bắt buộc nâng nếu dùng eKYC:** 3.0.0–3.0.3 (Android `native-android` 0.8.x trước 0.8.6) gây crash `NoSuchMethodError: extractCameraCharacteristics` khi mở camera eKYC (SDK dùng CameraX 1.6, không tương thích thư viện eKYC Kalapa). Nâng lên 3.0.4 trở lên. Nếu ứng dụng tự khai báo CameraX (`androidx.camera:*`), dùng bản `1.5.x` (khuyến nghị `1.5.3`), không dùng `1.6.x`.
 
@@ -17,11 +17,12 @@ Phiên bản hiện tại: **3.4.0**. Thư viện đã kèm SDK native (iOS `Pay
 5. [identityToken](#identitytoken)
 6. [API](#api)
 7. [Mã lỗi](#mã-lỗi)
-8. [Nâng cấp lên 3.4.0](#nâng-cấp-lên-340)
-9. [Nâng cấp lên 3.2.0](#nâng-cấp-lên-320)
-10. [Nâng cấp lên 3.1.0](#nâng-cấp-lên-310)
-11. [Nâng cấp từ 2.x](#nâng-cấp-từ-2x)
-12. [Hỗ trợ](#hỗ-trợ)
+8. [Nâng cấp lên 3.5.0](#nâng-cấp-lên-350)
+9. [Nâng cấp lên 3.4.0](#nâng-cấp-lên-340)
+10. [Nâng cấp lên 3.2.0](#nâng-cấp-lên-320)
+11. [Nâng cấp lên 3.1.0](#nâng-cấp-lên-310)
+12. [Nâng cấp từ 2.x](#nâng-cấp-từ-2x)
+13. [Hỗ trợ](#hỗ-trợ)
 
 ## Yêu cầu
 
@@ -33,52 +34,30 @@ Phiên bản hiện tại: **3.4.0**. Thư viện đã kèm SDK native (iOS `Pay
 ## Cài đặt
 
 ```sh
-npm install payme-mini-app@^3.4.0
+npm install payme-mini-app@^3.5.0
 ```
 
 ### iOS
 
-Thêm vào `ios/Podfile`:
+Không cần thêm gì vào `ios/Podfile` cho PayME: không cần `use_frameworks!`, `$dynamic_framework` hay `BUILD_LIBRARY_FOR_DISTRIBUTION` (dùng `use_frameworks! :linkage => :static` cũng được). Chỉ cần:
+
+```sh
+cd ios && pod install
+```
+
+Build bằng Xcode 27 mà Xcode báo pod có iOS tối thiểu thấp hơn 15.0: nâng trong `post_install`.
 
 ```ruby
-use_frameworks! :linkage => :static
-
-target 'YourApp' do
-  # ... use_react_native!(...) giữ nguyên
-
-  $dynamic_framework = [
-    'lottie-ios'
-  ]
-
-  pre_install do |installer|
-    installer.pod_targets.each do |pod|
-      if $dynamic_framework.include?(pod.name)
-        def pod.build_type
-          Pod::BuildType.dynamic_framework
-        end
-      end
-    end
-  end
-
-  post_install do |installer|
-    # react_native_post_install(...) giữ nguyên
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
-        if $dynamic_framework.include?(target.name)
-          config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-        end
-        # Nâng pod có iOS tối thiểu thấp hơn ứng dụng (Xcode 27 báo lỗi nếu dưới 15.0)
-        if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < min_ios_version_supported.to_f
-          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_ios_version_supported
-        end
+post_install do |installer|
+  # react_native_post_install(...) giữ nguyên
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < min_ios_version_supported.to_f
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_ios_version_supported
       end
     end
   end
 end
-```
-
-```sh
-cd ios && pod install
 ```
 
 ### Android
@@ -389,10 +368,17 @@ Hằng `PayMEErrorCode` chứa các mã lỗi thường gặp để so sánh, v�
 | `MINIAPP_CANNOT_PRESENT` | Không hiển thị được Miniapp | Gọi `open` khi ứng dụng đang ở foreground |
 | Mã khác | Lỗi mạng, máy chủ hoặc nghiệp vụ | Hiển thị `description`, thử lại; liên hệ PayME nếu lặp lại |
 
+## Nâng cấp lên 3.5.0
+
+1. `npm install payme-mini-app@^3.5.0`, rồi `cd ios && pod install --repo-update`.
+2. Bỏ khỏi `ios/Podfile` mọi cấu hình đã thêm cho PayME: danh sách `$dynamic_framework`, khối `pre_install`, dòng `BUILD_LIBRARY_FOR_DISTRIBUTION`. `use_frameworks!` không bắt buộc.
+3. SDK iOS 0.16.0 không còn dùng Lottie: ứng dụng tự dùng `lottie-ios` thì khai báo trực tiếp trong `Podfile`.
+4. API JS không đổi.
+
 ## Nâng cấp lên 3.4.0
 
-1. `npm install payme-mini-app@^3.4.0`, rồi `cd ios && pod install --repo-update`. Không cần thêm `source` nào vào `Podfile`.
-2. Rút gọn `$dynamic_framework` trong `ios/Podfile` còn `['lottie-ios']` (xem [Cài đặt](#cài-đặt)); bỏ `'PayMEMiniApp'` nếu có.
+1. `npm install payme-mini-app@^3.5.0`, rồi `cd ios && pod install --repo-update`. Không cần thêm `source` nào vào `Podfile`.
+2. Rút gọn `$dynamic_framework` trong `ios/Podfile` còn `['lottie-ios']` (xem [Cài đặt](#cài-đặt)); bỏ `'PayMEMiniApp'` nếu có. Từ 3.5.0 bỏ hẳn danh sách này, xem [Nâng cấp lên 3.5.0](#nâng-cấp-lên-350).
 3. SDK iOS không còn kéo theo `SwiftyJSON`, `ZIPFoundation`, `NSLogger`, `Mixpanel-swift`, `CryptoSwift`, `SwiftyRSA`, `GCDWebServer`: ứng dụng tự dùng pod nào thì khai báo trực tiếp trong `Podfile`.
 4. API JS không đổi. SDK không còn gửi sự kiện lên Mixpanel.
 5. SDK iOS 0.15.0 chưa được kiểm tra trên iOS 15–17: ứng dụng hỗ trợ các bản này nên thử luồng mở ví và thanh toán trước khi phát hành.
@@ -416,7 +402,7 @@ Bản 3.x thay số điện thoại bằng `identityToken` và không tương th
 | `getAccountInfo(phone)` | `getAccountInfo(identityToken)` |
 
 1. Server: tích hợp API `token-init` (liên hệ PayME).
-2. `npm install payme-mini-app@^3.4.0`, rồi `cd ios && pod install`.
+2. `npm install payme-mini-app@^3.5.0`, rồi `cd ios && pod install`.
 3. Thay mọi `phone` bằng `identityToken`.
 4. Xử lý lỗi `401` và `IDENTITY_TOKEN_REQUIRED`.
 5. Build iOS bằng Xcode 26.2 trở lên.
